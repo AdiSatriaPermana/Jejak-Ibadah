@@ -2,7 +2,6 @@ package lat.pam.jejakibadah.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
 @Entity(tableName = "dzikir")
 data class DzikirEntity(
     @PrimaryKey(autoGenerate = true)
