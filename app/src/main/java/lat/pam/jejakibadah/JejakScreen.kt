@@ -448,7 +448,7 @@ fun JejakScreen(
         }
 
         // 6. Floating Pill Navbar (Tab Jejak = index 1 aktif)
-        LightFloatingPillNavbar(
+        AppBottomNavbar(
             selectedIndex = 1,
             isDark = isDark,
             onSelectTab = onNavigateTab,
@@ -764,82 +764,3 @@ private fun LegendItem(
     }
 }
 
-// Komponen Floating Pill Navbar ringan (100% ikon bawaan Compose)
-@Composable
-fun LightFloatingPillNavbar(
-    selectedIndex: Int,
-    isDark: Boolean,
-    onSelectTab: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val navItems = listOf(
-        Pair("Beranda", Icons.Default.Home),
-        Pair("Jejak", Icons.Default.DateRange),
-        Pair("Dzikir", Icons.Default.Favorite),
-        Pair("Kiblat", Icons.Outlined.Place)
-    )
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = if (isDark) 16.dp else 12.dp,
-                shape = CircleShape,
-                ambientColor = Color.Black.copy(alpha = if (isDark) 0.55f else 0.16f),
-                spotColor = Color.Black.copy(alpha = if (isDark) 0.55f else 0.16f)
-            ),
-        shape = CircleShape,
-        color = if (isDark) DarkCard.copy(alpha = 0.96f) else Color.White.copy(alpha = 0.96f),
-        border = BorderStroke(
-            1.dp,
-            if (isDark) DarkBorder else LightBorder
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            navItems.forEachIndexed { index, (label, icon) ->
-                val isSelected = selectedIndex == index
-                val pillBg = if (isSelected) BrandBlue else Color.Transparent
-                val contentColor = when {
-                    isSelected -> Color.White
-                    isDark -> DarkTextSecondary
-                    else -> LightTextSecondary
-                }
-
-                Row(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(pillBg)
-                        .clickable { onSelectTab(index) }
-                        .padding(
-                            horizontal = if (isSelected) 14.dp else 10.dp,
-                            vertical = 8.dp
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = contentColor,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    if (isSelected) {
-                        Text(
-                            text = label,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
