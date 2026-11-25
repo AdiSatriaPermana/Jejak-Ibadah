@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import lat.pam.jejakibadah.ui.theme.JejakIbadahTheme
@@ -15,12 +15,20 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            var isDarkTheme by remember { mutableStateOf(false) }
-            JejakIbadahTheme(darkTheme = isDarkTheme) {
-                HomeScreen(
-                    isDarkTheme = isDarkTheme,
-                    onToggleTheme = { isDarkTheme = !isDarkTheme }
-                )
+            JejakIbadahTheme {
+                var currentTab by remember { mutableIntStateOf(0) }
+
+                when (currentTab) {
+                    0 -> HomeScreen(
+                        onNavigateTab = { currentTab = it }
+                    )
+                    1 -> JejakScreen(
+                        onNavigateTab = { currentTab = it }
+                    )
+                    else -> HomeScreen(
+                        onNavigateTab = { currentTab = it }
+                    )
+                }
             }
         }
     }

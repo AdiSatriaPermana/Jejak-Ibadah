@@ -7,47 +7,30 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-val DeepTeal = Color(0xFF0F2C30)
-val DeepTealSurface = Color(0xFF173B40)
-val WarmSand = Color(0xFFFAF7F2)
-val WarmCardLight = Color(0xFFFFFFFF)
-val SoftGold = Color(0xFFD99B43)
-val SoftGoldLight = Color(0xFFF3E2C7)
-val TextDark = Color(0xFF1A2426)
-val TextMuted = Color(0xFF647477)
-
-private val LightColorScheme = lightColorScheme(
-    primary = DeepTeal,
+private val LightColors = lightColorScheme(
+    primary = BrandBlue,
     onPrimary = Color.White,
-    primaryContainer = DeepTeal,
-    onPrimaryContainer = Color.White,
-    secondary = SoftGold,
-    onSecondary = DeepTeal,
-    secondaryContainer = SoftGoldLight,
-    onSecondaryContainer = TextDark,
-    background = WarmSand,
-    onBackground = TextDark,
-    surface = WarmCardLight,
-    onSurface = TextDark,
-    surfaceVariant = Color(0xFFEDE8DF),
-    onSurfaceVariant = TextMuted
+    secondary = BrandCyan,
+    background = LightCanvas,
+    onBackground = LightTextPrimary,
+    surface = LightCard,
+    onSurface = LightTextPrimary,
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurfaceVariant = LightTextSecondary,
+    outline = LightBorder
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = SoftGold,
-    onPrimary = DeepTeal,
-    primaryContainer = DeepTealSurface,
-    onPrimaryContainer = Color(0xFFF5F2EB),
-    secondary = SoftGold,
-    onSecondary = DeepTeal,
-    secondaryContainer = Color(0xFF234D53),
-    onSecondaryContainer = Color(0xFFF5F2EB),
-    background = Color(0xFF0A1D20),
-    onBackground = Color(0xFFF5F2EB),
-    surface = DeepTeal,
-    onSurface = Color(0xFFF5F2EB),
-    surfaceVariant = DeepTealSurface,
-    onSurfaceVariant = Color(0xFFA3B8BB)
+private val DarkColors = darkColorScheme(
+    primary = BrandBlue,
+    onPrimary = Color.White,
+    secondary = BrandCyan,
+    background = DarkCanvas,
+    onBackground = DarkTextPrimary,
+    surface = DarkCard,
+    onSurface = DarkTextPrimary,
+    surfaceVariant = DarkSubCard,
+    onSurfaceVariant = DarkTextSecondary,
+    outline = DarkBorder
 )
 
 @Composable
@@ -55,10 +38,11 @@ fun JejakIbadahTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (darkTheme) DarkColors else LightColors
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = Typography,
         content = content
     )
 }
