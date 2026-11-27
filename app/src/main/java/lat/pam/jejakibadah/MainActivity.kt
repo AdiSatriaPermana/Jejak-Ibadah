@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenSettings = { showSettings = true }
                             )
                             1 -> JejakScreen(
+                                onOpenSettings = { showSettings = true },
                                 onNavigateTab = { currentTab = it }
                                 // Tambahkan parameter onOpenSettings = { showSettings = true } setelah JejakScreen diperbarui
                             )
