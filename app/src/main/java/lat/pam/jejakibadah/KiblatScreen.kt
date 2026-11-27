@@ -157,7 +157,7 @@ fun KiblatScreen(
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
@@ -432,7 +432,7 @@ private fun QiblaCompassCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = 26.dp, top = 26.dp)
+                        .padding(start = 26.dp, top = 18.dp)
                 ) {
                     Box(
                         modifier = Modifier

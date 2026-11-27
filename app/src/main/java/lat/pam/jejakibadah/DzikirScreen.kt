@@ -176,7 +176,7 @@ fun DzikirScreen(
                             text = "Lafalkan dengan penuh ketenteraman hati",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -277,6 +277,7 @@ fun DzikirScreen(
                 item {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(end = 12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         items(categories) { category ->
