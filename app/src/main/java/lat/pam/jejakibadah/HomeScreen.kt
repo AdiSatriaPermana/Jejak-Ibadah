@@ -1,5 +1,10 @@
 package lat.pam.jejakibadah
 
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -63,7 +68,7 @@ data class DailyIbadahItem(
 
 @Composable
 fun HomeScreen(
-    isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isDarkTheme: Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f,
     onNavigateTab: (Int) -> Unit = {},
     onOpenSettings: () -> Unit = {}
 ) {
@@ -132,6 +137,15 @@ fun HomeScreen(
 
     val completedCount = ibadahList.count { it.isCompleted }
 
+    val haptic = LocalHapticFeedback.current
+    var lastCompleted by remember { mutableIntStateOf(completedCount) }
+    LaunchedEffect(completedCount) {
+        if (completedCount > lastCompleted) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+        lastCompleted = completedCount
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -139,7 +153,10 @@ fun HomeScreen(
             .statusBarsPadding()
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .widthIn(max = 640.dp)
+                .fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 18.dp,
                 end = 18.dp,
@@ -173,7 +190,16 @@ fun HomeScreen(
 
             // 3. Prayer Strip (Imsak, Duha & 5 Waktu Salat tersinkron)
             item {
-                PrayerTimesStrip(prayers = prayerSlots, isDark = isDarkTheme)
+                PrayerTimesStrip(
+                    prayers = prayerSlots,
+                    isDark = isDarkTheme,
+                    onPrayerClick = { name ->
+                        ibadahList.firstOrNull { it.prayerKey == name }?.let { salat ->
+                            isBerjamaahChecked = salat.subtitle.contains("Berjamaah", ignoreCase = true)
+                            selectedSalatForDialog = salat
+                        }
+                    }
+                )
             }
 
             // 4. Header Section Ibadah Hari Ini
@@ -496,6 +522,10 @@ private fun NextPrayerHeroCard(
     allDoneToday: Boolean,
     onOpenQibla: () -> Unit
 ) {
+    val heroProgress by animateFloatAsState(
+        targetValue = if (allDoneToday) 1f else 0.68f,
+        label = "heroProgress"
+    )
     val gradientColors = if (isDark) {
         listOf(BrandBlue, Color(0xFF004F8B))
     } else {
@@ -660,7 +690,11 @@ private fun NextPrayerHeroCard(
 }
 
 @Composable
-private fun PrayerTimesStrip(prayers: List<PrayerSlot>, isDark: Boolean) {
+private fun PrayerTimesStrip(
+    prayers: List<PrayerSlot>,
+    isDark: Boolean,
+    onPrayerClick: (String) -> Unit = {}
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
             modifier = Modifier
@@ -744,6 +778,7 @@ private fun PrayerTimesStrip(prayers: List<PrayerSlot>, isDark: Boolean) {
                             .weight(1f)
                             .clip(RoundedCornerShape(13.dp))
                             .background(slotBg)
+                            .clickable { onPrayerClick(slot.name) }
                             .border(1.dp, slotBorder, RoundedCornerShape(13.dp))
                             .padding(vertical = 8.dp, horizontal = 2.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,

@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import lat.pam.jejakibadah.ui.theme.*
+import androidx.compose.foundation.isSystemInDarkTheme
 
 // Status harian pada Heatmap
 enum class DayHeatmapStatus {
@@ -45,10 +46,11 @@ enum class DayHeatmapStatus {
 
 @Composable
 fun JejakScreen(
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     onOpenSettings: () -> Unit = {},
-    onNavigateTab: (Int) -> Unit = {}
+    onNavigateTab: (Int) -> Unit = {},
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = isDarkTheme
 
     // Filter jenis ibadah
     val worshipFilters = listOf("Semua Salat", "Subuh", "Dzikir Pagi", "Tilawah", "Puasa")
