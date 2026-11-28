@@ -15,21 +15,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -40,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import lat.pam.jejakibadah.ui.theme.*
+import androidx.compose.foundation.isSystemInDarkTheme
 
 // Status harian pada Heatmap
 enum class DayHeatmapStatus {
@@ -52,10 +46,11 @@ enum class DayHeatmapStatus {
 
 @Composable
 fun JejakScreen(
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     onOpenSettings: () -> Unit = {},
-    onNavigateTab: (Int) -> Unit = {}
+    onNavigateTab: (Int) -> Unit = {},
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = isDarkTheme
 
     // Filter jenis ibadah
     val worshipFilters = listOf("Semua Salat", "Subuh", "Dzikir Pagi", "Tilawah", "Puasa")
@@ -65,15 +60,15 @@ fun JejakScreen(
     var currentStreak by remember { mutableIntStateOf(14) }
     val longestStreak = 28
     var freezeQuota by remember { mutableIntStateOf(2) }
+    var isFreezeTodayActive by remember { mutableStateOf(false) }
     var isJedaTodayActive by remember { mutableStateOf(false) }
 
-    // Data dummy kalender November 2026 (Tanggal 1..30)
+    // Data kalender November 2026 (Tanggal 1..30)
     var novemberStatuses by remember {
         mutableStateOf(
             (1..30).associateWith { day ->
                 when (day) {
                     8, 14 -> DayHeatmapStatus.TERLAMBAT
-                    22 -> DayHeatmapStatus.FREEZE
                     in 1..21 -> DayHeatmapStatus.TEPAT_WAKTU
                     else -> DayHeatmapStatus.BELUM
                 }
@@ -81,8 +76,9 @@ fun JejakScreen(
         )
     }
 
-    // Dialog koreksi tanggal (H-1 s.d. H-3 -> tanggal 19, 20, 21)
+    // Dialog koreksi tanggal (H-1 s.d. H-3 -> tanggal 19, 20, 21) & konfirmasi Freeze
     var editingDay by remember { mutableStateOf<Int?>(null) }
+    var showFreezeDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -96,7 +92,7 @@ fun JejakScreen(
                 start = 18.dp,
                 end = 18.dp,
                 top = 12.dp,
-                bottom = 104.dp
+                bottom = BottomNavSafePadding + 24.dp
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -107,7 +103,7 @@ fun JejakScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(
                             text = "Jejak Konsistensi",
                             fontSize = 20.sp,
@@ -126,14 +122,14 @@ fun JejakScreen(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(38.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
                                 contentDescription = "Pengaturan",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                     }
@@ -169,17 +165,24 @@ fun JejakScreen(
             // 3. Streak Summary Row (Streak Aktif & Rekor Terpanjang)
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Card 1: Streak Aktif
                     Surface(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         shape = RoundedCornerShape(18.dp),
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -189,7 +192,8 @@ fun JejakScreen(
                                     text = "Streak Aktif",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
                                 )
                                 Box(
                                     modifier = Modifier
@@ -229,12 +233,17 @@ fun JejakScreen(
 
                     // Card 2: Rekor Terpanjang
                     Surface(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         shape = RoundedCornerShape(18.dp),
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -244,7 +253,8 @@ fun JejakScreen(
                                     text = "Rekor Terpanjang",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
                                 )
                                 Box(
                                     modifier = Modifier
@@ -309,18 +319,25 @@ fun JejakScreen(
                                 text = "PERLINDUNGAN KETENANGAN",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp,
-                                color = MaterialTheme.colorScheme.onSurface
+                                letterSpacing = 0.4.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp)
                             )
                             Text(
                                 text = "Tanpa Beban Bersalah",
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isDark) BrandCyan else BrandBlue
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isDark) BrandCyan else BrandBlue,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -330,8 +347,12 @@ fun JejakScreen(
                             Surface(
                                 onClick = {
                                     isJedaTodayActive = !isJedaTodayActive
+                                    if (isJedaTodayActive && isFreezeTodayActive) {
+                                        isFreezeTodayActive = false
+                                        freezeQuota += 1
+                                    }
                                     novemberStatuses = novemberStatuses.toMutableMap().apply {
-                                        this[22] = if (isJedaTodayActive) DayHeatmapStatus.JEDA else DayHeatmapStatus.FREEZE
+                                        this[22] = if (isJedaTodayActive) DayHeatmapStatus.JEDA else DayHeatmapStatus.BELUM
                                     }
                                 },
                                 modifier = Modifier.weight(1f),
@@ -360,7 +381,7 @@ fun JejakScreen(
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = if (isJedaTodayActive) "Jeda Aktif" else "Jeda Hari Ini",
                                             fontSize = 11.sp,
@@ -372,7 +393,9 @@ fun JejakScreen(
                                         Text(
                                             text = "Istirahat tenang",
                                             fontSize = 9.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -381,17 +404,23 @@ fun JejakScreen(
                             // Tombol Streak Freeze (Kuota 2/2)
                             Surface(
                                 onClick = {
-                                    if (freezeQuota > 0) {
-                                        freezeQuota -= 1
+                                    if (isFreezeTodayActive) {
+                                        isFreezeTodayActive = false
+                                        freezeQuota += 1
                                         novemberStatuses = novemberStatuses.toMutableMap().apply {
-                                            this[22] = DayHeatmapStatus.FREEZE
+                                            this[22] = DayHeatmapStatus.BELUM
                                         }
+                                    } else if (freezeQuota > 0) {
+                                        showFreezeDialog = true
                                     }
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
                                 color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(1.dp, BrandCyan.copy(alpha = 0.45f))
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isFreezeTodayActive) BrandCyan else BrandCyan.copy(alpha = 0.45f)
+                                )
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
@@ -411,18 +440,21 @@ fun JejakScreen(
                                             color = BrandCyan
                                         )
                                     }
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "Freeze ($freezeQuota/2)",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = BrandCyan,
-                                            maxLines = 1
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
-                                            text = "Pelindung aktif",
+                                            text = if (isFreezeTodayActive) "Terpasang hari ini" else "Pelindung aktif",
                                             fontSize = 9.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                 }
@@ -447,16 +479,51 @@ fun JejakScreen(
             }
         }
 
-        // 6. Floating Pill Navbar (Tab Jejak = index 1 aktif)
+        // 6. Floating Pill Navbar (Padding luar sudah ditangani di dalam AppBottomNavbar)
         AppBottomNavbar(
             selectedIndex = 1,
             isDark = isDark,
             onSelectTab = onNavigateTab,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 18.dp, vertical = 14.dp)
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        // Dialog Konfirmasi Pakai Streak Freeze
+        if (showFreezeDialog) {
+            AlertDialog(
+                onDismissRequest = { showFreezeDialog = false },
+                title = {
+                    Text(
+                        text = "Gunakan Streak Freeze?",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Streak aktif kamu akan tetap terlindungi hari ini tanpa mengurangi hitungan beruntun. Sisa kuota bulan ini akan menjadi ${freezeQuota - 1}/2.",
+                        fontSize = 13.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        freezeQuota -= 1
+                        isFreezeTodayActive = true
+                        isJedaTodayActive = false
+                        novemberStatuses = novemberStatuses.toMutableMap().apply {
+                            this[22] = DayHeatmapStatus.FREEZE
+                        }
+                        showFreezeDialog = false
+                    }) {
+                        Text("Aktifkan Freeze", color = BrandBlue, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showFreezeDialog = false }) {
+                        Text("Batal")
+                    }
+                }
+            )
+        }
 
         // Dialog Koreksi Data Mundur (H-1 s.d. H-3)
         editingDay?.let { day ->
@@ -517,7 +584,6 @@ private fun CalendarHeatmapCard(
     onDayClick: (Int) -> Unit
 ) {
     val daysOfWeek = listOf("Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Ahd")
-    // November 2026 dimulai pada hari Minggu (indeks ke-6 jika Senin = 0) -> 6 kotak kosong di awal
     val leadingEmptySlots = 6
     val totalCells = leadingEmptySlots + 30
     val rowsCount = (totalCells + 6) / 7
@@ -536,13 +602,16 @@ private fun CalendarHeatmapCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(
                         text = "November 2026",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -573,7 +642,9 @@ private fun CalendarHeatmapCard(
                         text = "92% Terpenuhi",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isDark) EmeraldDark else EmeraldLight
+                        color = if (isDark) EmeraldDark else EmeraldLight,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
@@ -663,7 +734,8 @@ private fun CalendarHeatmapCard(
                 Text(
                     text = "Ketuk tanggal H-1 s.d. H-3 (19–21 Nov) untuk koreksi data.",
                     fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -706,7 +778,6 @@ private fun HeatmapDayCell(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Garis putus-putus khusus status Freeze / Jeda tanpa library eksternal
         if (status == DayHeatmapStatus.FREEZE || status == DayHeatmapStatus.JEDA) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRoundRect(
@@ -759,8 +830,9 @@ private fun LegendItem(
         Text(
             text = label,
             fontSize = 10.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }
-

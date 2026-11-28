@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import lat.pam.jejakibadah.ui.theme.*
@@ -52,9 +52,9 @@ data class HijriDayCellData(
 
 @Composable
 fun KiblatScreen(
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     onNavigateTab: (Int) -> Unit = {}
 ) {
-    val isDark = isSystemInDarkTheme()
     val haptic = LocalHapticFeedback.current
 
     // Segmented Mode: 0 = Semua (Kiblat + Kalender), 1 = Fokus Kalender Hijriah
@@ -64,6 +64,7 @@ fun KiblatScreen(
     var qiblaDegree by remember { mutableFloatStateOf(295f) }
     var hapticEnabled by remember { mutableStateOf(true) }
     var isCalibrating by remember { mutableStateOf(false) }
+    var showCalibrationDialog by remember { mutableStateOf(false) }
 
     // Animasi rotasi jarum kompas (295° = -65° dari arah Utara atas)
     val needleAngle by animateFloatAsState(
@@ -80,16 +81,39 @@ fun KiblatScreen(
         label = "qibla_needle_rotation"
     )
 
-    val weekHijriCells = remember {
-        listOf(
-            HijriDayCellData("Min", 22, "12 H"),
-            HijriDayCellData("Sen", 23, "13 H", isAyyamulBidh = true),
-            HijriDayCellData("Sel", 24, "14 H", isAyyamulBidh = true),
-            HijriDayCellData("Rab", 25, "15 H", isAyyamulBidh = true),
-            HijriDayCellData("Kam", 26, "16 H"),
-            HijriDayCellData("Jum", 27, "17 H", isHolidayHighlight = true),
-            HijriDayCellData("Sab", 28, "18 H", isWeekend = true)
-        )
+    // Navigasi minggu pada kalender Hijriah (0 = minggu aktif)
+    var weekOffset by remember { mutableIntStateOf(0) }
+
+    val weekHijriCells = remember(weekOffset) {
+        when (weekOffset) {
+            -1 -> listOf(
+                HijriDayCellData("Min", 15, "5 H"),
+                HijriDayCellData("Sen", 16, "6 H"),
+                HijriDayCellData("Sel", 17, "7 H"),
+                HijriDayCellData("Rab", 18, "8 H"),
+                HijriDayCellData("Kam", 19, "9 H"),
+                HijriDayCellData("Jum", 20, "10 H"),
+                HijriDayCellData("Sab", 21, "11 H", isWeekend = true)
+            )
+            1 -> listOf(
+                HijriDayCellData("Min", 29, "19 H"),
+                HijriDayCellData("Sen", 30, "20 H"),
+                HijriDayCellData("Sel", 1, "21 H"),
+                HijriDayCellData("Rab", 2, "22 H"),
+                HijriDayCellData("Kam", 3, "23 H"),
+                HijriDayCellData("Jum", 4, "24 H"),
+                HijriDayCellData("Sab", 5, "25 H", isWeekend = true)
+            )
+            else -> listOf(
+                HijriDayCellData("Min", 22, "12 H"),
+                HijriDayCellData("Sen", 23, "13 H", isAyyamulBidh = true),
+                HijriDayCellData("Sel", 24, "14 H", isAyyamulBidh = true),
+                HijriDayCellData("Rab", 25, "15 H", isAyyamulBidh = true),
+                HijriDayCellData("Kam", 26, "16 H"),
+                HijriDayCellData("Jum", 27, "17 H", isHolidayHighlight = true),
+                HijriDayCellData("Sab", 28, "18 H", isWeekend = true)
+            )
+        }
     }
 
     Box(
@@ -104,7 +128,7 @@ fun KiblatScreen(
                 start = 18.dp,
                 end = 18.dp,
                 top = 12.dp,
-                bottom = 104.dp
+                bottom = BottomNavSafePadding + 28.dp
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -116,19 +140,25 @@ fun KiblatScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Top
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
+                        ) {
                             Text(
                                 text = "AKURASI SENSOR",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.8.sp,
-                                color = if (isDark) BrandCyan else BrandBlue
+                                color = if (isDarkTheme) BrandCyan else BrandBlue
                             )
                             Text(
                                 text = "Arah Kiblat & Kalender",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onBackground
+                                color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -136,10 +166,10 @@ fun KiblatScreen(
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(if (isDark) DarkCard else EmeraldBgLight)
+                                .background(if (isDarkTheme) DarkCard else EmeraldBgLight)
                                 .border(
                                     1.dp,
-                                    if (isDark) DarkBorder else EmeraldLight.copy(alpha = 0.35f),
+                                    if (isDarkTheme) DarkBorder else EmeraldLight.copy(alpha = 0.35f),
                                     CircleShape
                                 )
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
@@ -152,13 +182,15 @@ fun KiblatScreen(
                                     modifier = Modifier
                                         .size(6.dp)
                                         .clip(CircleShape)
-                                        .background(if (isDark) EmeraldDark else EmeraldLight)
+                                        .background(if (isDarkTheme) EmeraldDark else EmeraldLight)
                                 )
                                 Text(
-                                    text = if (isCalibrating) "Mengkalibrasi..." else "Kompas Presisi",
+                                    text = if (isCalibrating) "Kalibrasi..." else "Kompas Presisi",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = if (isDark) BrandCyan else EmeraldLight
+                                    color = if (isDarkTheme) BrandCyan else EmeraldLight,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -173,8 +205,8 @@ fun KiblatScreen(
                     // Top Segmented Switcher Pill (Arah Kiblat vs Kalender Hijriah)
                     Surface(
                         shape = CircleShape,
-                        color = if (isDark) DarkCard else Color(0xFFEEF2F6),
-                        border = if (isDark) BorderStroke(1.dp, DarkBorder) else null
+                        color = if (isDarkTheme) DarkCard else Color(0xFFEEF2F6),
+                        border = if (isDarkTheme) BorderStroke(1.dp, DarkBorder) else null
                     ) {
                         Row(
                             modifier = Modifier
@@ -193,7 +225,7 @@ fun KiblatScreen(
                                         .clip(CircleShape)
                                         .background(if (active) BrandBlue else Color.Transparent)
                                         .clickable { selectedTabMode = index }
-                                        .padding(vertical = 8.dp, horizontal = 10.dp),
+                                        .padding(vertical = 8.dp, horizontal = 8.dp),
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -203,12 +235,14 @@ fun KiblatScreen(
                                         tint = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(15.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(5.dp))
                                     Text(
                                         text = label,
                                         fontSize = 12.sp,
                                         fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
-                                        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -223,7 +257,7 @@ fun KiblatScreen(
                     QiblaCompassCard(
                         degree = qiblaDegree.toInt(),
                         needleAngle = needleAngle,
-                        isDark = isDark,
+                        isDark = isDarkTheme,
                         hapticEnabled = hapticEnabled,
                         onToggleHaptic = {
                             hapticEnabled = !hapticEnabled
@@ -232,8 +266,7 @@ fun KiblatScreen(
                             }
                         },
                         onRecalibrate = {
-                            isCalibrating = true
-                            qiblaDegree = 295f
+                            showCalibrationDialog = true
                         }
                     )
                 }
@@ -243,7 +276,10 @@ fun KiblatScreen(
             item {
                 HijriCalendarCard(
                     cells = weekHijriCells,
-                    isDark = isDark
+                    subtitleMonth = if (weekOffset == 1) "Nov – Des 2026" else "November 2026",
+                    isDark = isDarkTheme,
+                    onPrevWeek = { if (weekOffset > -1) weekOffset -= 1 },
+                    onNextWeek = { if (weekOffset < 1) weekOffset += 1 }
                 )
             }
         }
@@ -251,13 +287,44 @@ fun KiblatScreen(
         // 4. Floating Pill Navbar Konsisten (Index 3 = Kiblat aktif)
         AppBottomNavbar(
             selectedIndex = 3,
-            isDark = isDark,
+            isDark = isDarkTheme,
             onSelectTab = onNavigateTab,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(horizontal = 18.dp, vertical = 14.dp)
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        // Dialog Panduan Kalibrasi Kompas (Angka 8)
+        if (showCalibrationDialog) {
+            AlertDialog(
+                onDismissRequest = { showCalibrationDialog = false },
+                title = {
+                    Text(
+                        text = "Kalibrasi Sensor Kompas",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Gerakkan ponsel membentuk pola angka 8 (∞) sebanyak 2–3 kali jauh dari benda logam atau magnet untuk menyegarkan akurasi sensor.",
+                        fontSize = 13.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showCalibrationDialog = false
+                        isCalibrating = true
+                        qiblaDegree = 295f
+                    }) {
+                        Text("Mulai Kalibrasi", color = BrandBlue, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showCalibrationDialog = false }) {
+                        Text("Batal")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -285,18 +352,16 @@ private fun QiblaCompassCard(
                 .padding(18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Dial Kompas 220dp
+            // Dial Kompas 224dp
             Box(
                 modifier = Modifier.size(224.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Canvas Lingkaran Kalibrasi & Tick Marks
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val center = Offset(size.width / 2f, size.height / 2f)
                     val outerRadius = size.minDimension / 2f - 8.dp.toPx()
                     val innerRadius = outerRadius - 16.dp.toPx()
 
-                    // Lingkaran luar putus-putus
                     drawCircle(
                         color = outerRingColor,
                         radius = outerRadius,
@@ -307,7 +372,6 @@ private fun QiblaCompassCard(
                         )
                     )
 
-                    // Lingkaran dalam tipis
                     drawCircle(
                         color = innerRingColor,
                         radius = innerRadius,
@@ -315,7 +379,6 @@ private fun QiblaCompassCard(
                         style = Stroke(width = 1.dp.toPx())
                     )
 
-                    // 4 Garis Mata Angin (U, T, S, B)
                     for (i in 0 until 4) {
                         val angleRad = Math.toRadians((i * 90 - 90).toDouble())
                         val start = Offset(
@@ -335,7 +398,6 @@ private fun QiblaCompassCard(
                     }
                 }
 
-                // Label Mata Angin
                 Text(
                     text = "U",
                     fontSize = 11.sp,
@@ -370,7 +432,7 @@ private fun QiblaCompassCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = 26.dp, top = 26.dp)
+                        .padding(start = 26.dp, top = 18.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -405,7 +467,6 @@ private fun QiblaCompassCard(
                     val cx = size.width / 2f
                     val cy = size.height / 2f
 
-                    // Ujung Utara / Kiblat (Biru / Cyan)
                     val northPath = Path().apply {
                         moveTo(cx, 8.dp.toPx())
                         lineTo(cx - 7.dp.toPx(), cy)
@@ -414,7 +475,6 @@ private fun QiblaCompassCard(
                     }
                     drawPath(path = northPath, color = activeAccent)
 
-                    // Ujung Selatan (Abu-abu netral)
                     val southPath = Path().apply {
                         moveTo(cx, size.height - 12.dp.toPx())
                         lineTo(cx - 6.dp.toPx(), cy)
@@ -427,7 +487,6 @@ private fun QiblaCompassCard(
                     )
                 }
 
-                // Titik Tengah Kompas
                 Box(
                     modifier = Modifier
                         .size(42.dp)
@@ -474,7 +533,6 @@ private fun QiblaCompassCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Badge Status Alignment
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -509,7 +567,6 @@ private fun QiblaCompassCard(
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Metadata Jarak & Koordinat Bandung
             Row(horizontalArrangement = Arrangement.Center) {
                 Text(
                     text = "Jarak ke Ka'bah: ",
@@ -532,7 +589,6 @@ private fun QiblaCompassCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Tombol Haptic & Kalibrasi Ulang
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -545,7 +601,7 @@ private fun QiblaCompassCard(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -555,12 +611,14 @@ private fun QiblaCompassCard(
                             fontWeight = FontWeight.Bold,
                             color = activeAccent
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = if (hapticEnabled) "Getar Aktif" else "Getar Mati",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -573,7 +631,7 @@ private fun QiblaCompassCard(
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -583,12 +641,14 @@ private fun QiblaCompassCard(
                             tint = BrandBlue,
                             modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = "Kalibrasi Ulang",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -600,7 +660,10 @@ private fun QiblaCompassCard(
 @Composable
 private fun HijriCalendarCard(
     cells: List<HijriDayCellData>,
-    isDark: Boolean
+    subtitleMonth: String,
+    isDark: Boolean,
+    onPrevWeek: () -> Unit,
+    onNextWeek: () -> Unit
 ) {
     val activeAccent = if (isDark) BrandCyan else BrandBlue
 
@@ -610,13 +673,12 @@ private fun HijriCalendarCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header Penanggalan Islam
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "PENANGGALAN ISLAM",
                         fontSize = 10.sp,
@@ -628,10 +690,12 @@ private fun HijriCalendarCard(
                         text = "Rajab – Sya'ban 1448 H",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "November 2026",
+                        text = subtitleMonth,
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -639,10 +703,10 @@ private fun HijriCalendarCard(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Surface(
-                        onClick = {},
+                        onClick = onPrevWeek,
                         shape = CircleShape,
                         color = if (isDark) DarkSubCard else Color(0xFFF1F5F9),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(30.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -654,10 +718,10 @@ private fun HijriCalendarCard(
                         }
                     }
                     Surface(
-                        onClick = {},
+                        onClick = onNextWeek,
                         shape = CircleShape,
                         color = if (isDark) DarkSubCard else Color(0xFFF1F5F9),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(30.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -673,7 +737,6 @@ private fun HijriCalendarCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Grid 7 Hari Dual-Date (Masehi + Hijriah)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
@@ -743,7 +806,6 @@ private fun HijriCalendarCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Daftar Agenda Ibadah & Hari Besar
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AgendaItemRow(
                     emoji = "⭐",
@@ -826,7 +888,9 @@ private fun AgendaItemRow(
                     text = badge,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isPrimaryBadge) (if (isDark) BrandCyan else BrandBlue) else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isPrimaryBadge) (if (isDark) BrandCyan else BrandBlue) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }

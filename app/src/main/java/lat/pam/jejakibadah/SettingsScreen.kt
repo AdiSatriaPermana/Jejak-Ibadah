@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -31,10 +32,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import lat.pam.jejakibadah.ui.theme.*
-import androidx.compose.material.icons.filled.Person
 
 @Composable
 fun SettingsScreen(
@@ -68,6 +69,9 @@ fun SettingsScreen(
     val iconContainerBorder = if (isDark) BrandCyan.copy(alpha = 0.28f) else Color(0xFFDBEAFE)
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Column(
@@ -85,9 +89,9 @@ fun SettingsScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
-                        // Tombol Kembali Bulat
                         Surface(
                             onClick = onNavigateBack,
                             shape = CircleShape,
@@ -109,11 +113,13 @@ fun SettingsScreen(
                             text = "Pengaturan",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            color = MaterialTheme.colorScheme.onBackground,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
-                    // Badge Versi v1.4.0
+                    // Badge Versi v1.0.0 (Sesuai PRD v1.0)
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -126,10 +132,12 @@ fun SettingsScreen(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "v1.4.0",
+                            text = "v1.0.0",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = activeAccent
+                            color = activeAccent,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -145,10 +153,11 @@ fun SettingsScreen(
                 start = 16.dp,
                 end = 16.dp,
                 top = 16.dp,
-                bottom = 32.dp
+                bottom = 28.dp
             ),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // Kartu Pengaturan Awal (Membuka ulang OnboardingScreen / LoginScreen)
             item {
                 Surface(
                     onClick = onOpenLogin,
@@ -166,7 +175,9 @@ fun SettingsScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.Person,
@@ -176,15 +187,19 @@ fun SettingsScreen(
                             )
                             Column {
                                 Text(
-                                    text = "Mode Offline (Tamu)",
+                                    text = "Preferensi Awal & Target Ibadah",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = "Masuk untuk cadangkan streak & ibadah",
+                                    text = "Atur ulang bahasa, lokasi, & ibadah sunnah",
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -196,15 +211,18 @@ fun SettingsScreen(
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = "Masuk",
+                                text = "Atur",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
                 }
             }
+
             // Banner feedback singkat jika ada aksi yang ditekan
             if (statusToastMessage != null) {
                 item {
@@ -235,6 +253,8 @@ fun SettingsScreen(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = activeAccent,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier
                                     .clickable { statusToastMessage = null }
                                     .padding(start = 8.dp)
@@ -249,7 +269,6 @@ fun SettingsScreen(
             // =========================================================
             item {
                 SettingsSectionBlock(title = "JADWAL & AZAN") {
-                    // 1. Kota & Koordinat
                     SettingsNavigationRow(
                         icon = Icons.Default.LocationOn,
                         title = "Kota & Koordinat",
@@ -267,7 +286,6 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 2. Metode Perhitungan
                     SettingsNavigationRow(
                         icon = Icons.Default.Settings,
                         title = "Metode Perhitungan",
@@ -288,7 +306,7 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 3. Koreksi Ihtiyati (+2 Menit stepper)
+                    // Koreksi Ihtiyati (+2 Menit stepper)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -298,7 +316,10 @@ fun SettingsScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.CheckCircle,
@@ -310,7 +331,9 @@ fun SettingsScreen(
                                 text = "Koreksi Ihtiyati",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -336,7 +359,9 @@ fun SettingsScreen(
                                 text = "+$ihtiyatiMinutes Menit",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                softWrap = false
                             )
                             Text(
                                 text = "+",
@@ -352,7 +377,6 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 4. Suara & Mode Azan
                     SettingsNavigationRow(
                         icon = Icons.Default.Notifications,
                         title = "Suara & Mode Azan",
@@ -373,7 +397,7 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 5. Panduan Anti-Delay Notifikasi (Highlight Amber)
+                    // Panduan Anti-Delay Notifikasi
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -386,7 +410,9 @@ fun SettingsScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.Warning,
@@ -399,12 +425,16 @@ fun SettingsScreen(
                                     text = "Panduan Anti-Delay Notifikasi",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "Xiaomi, Oppo, Vivo, Samsung",
                                     fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -428,7 +458,9 @@ fun SettingsScreen(
                                     text = "Info Penting",
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDark) AmberDark else Color(0xFFB45309)
+                                    color = if (isDark) AmberDark else Color(0xFFB45309),
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                             Icon(
@@ -447,7 +479,6 @@ fun SettingsScreen(
             // =========================================================
             item {
                 SettingsSectionBlock(title = "TAMPILAN & KALENDER") {
-                    // 1. Tema Aplikasi (Terang / Gelap / Sistem)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -497,7 +528,9 @@ fun SettingsScreen(
                                         text = label,
                                         fontSize = 12.sp,
                                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (active) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }
@@ -506,7 +539,7 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 2. Koreksi Tanggal Hijriah (-1 / 0 Hari / +1)
+                    // Koreksi Tanggal Hijriah (-1 / 0 Hari / +1)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -516,7 +549,10 @@ fun SettingsScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.DateRange,
@@ -528,7 +564,9 @@ fun SettingsScreen(
                                 text = "Koreksi Tanggal Hijriah",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -559,7 +597,9 @@ fun SettingsScreen(
                                     text = "${if (hijriCorrection > 0) "+$hijriCorrection" else hijriCorrection} Hari",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                             Text(
@@ -576,7 +616,7 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 3. Pengingat Puasa Sunnah (Switch)
+                    // Pengingat Puasa Sunnah
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -587,7 +627,9 @@ fun SettingsScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.Notifications,
@@ -600,12 +642,16 @@ fun SettingsScreen(
                                     text = "Pengingat Puasa Sunnah",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = "Senin-Kamis & Ayyamul Bidh",
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -627,7 +673,6 @@ fun SettingsScreen(
             // =========================================================
             item {
                 SettingsSectionBlock(title = "DATA & PRIVASI (100% OFFLINE)") {
-                    // 1. Ekspor Riwayat Ibadah
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -640,7 +685,10 @@ fun SettingsScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.Share,
@@ -652,7 +700,9 @@ fun SettingsScreen(
                                 text = "Ekspor Riwayat Ibadah",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -671,7 +721,9 @@ fun SettingsScreen(
                                     text = "CSV / Excel",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                             Icon(
@@ -685,12 +737,11 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 2. Tentang Jejak Ibadah
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                statusToastMessage = "Jejak Ibadah v1.4.0 — Aplikasi catatan ibadah 100% offline."
+                                statusToastMessage = "Jejak Ibadah v1.0.0 — Aplikasi catatan ibadah 100% offline."
                             }
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -699,7 +750,9 @@ fun SettingsScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.Info,
@@ -715,7 +768,7 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Versi 1.4.0 • Bebas Iklan & Pelacak",
+                                    text = "Versi 1.0.0 • Bebas Iklan & Pelacak",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -732,7 +785,6 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                    // 3. Destructive: Hapus Semua Data
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -744,7 +796,9 @@ fun SettingsScreen(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp)
                         ) {
                             SettingsLeadingIcon(
                                 icon = Icons.Default.Delete,
@@ -794,7 +848,6 @@ fun SettingsScreen(
         }
     }
 
-    // Dialog Panduan Anti-Delay Notifikasi
     if (showAntiDelayDialog) {
         AlertDialog(
             onDismissRequest = { showAntiDelayDialog = false },
@@ -815,7 +868,6 @@ fun SettingsScreen(
         )
     }
 
-    // Dialog Konfirmasi Hapus Semua Data
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -917,7 +969,9 @@ private fun SettingsNavigationRow(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp)
         ) {
             SettingsLeadingIcon(
                 icon = icon,
@@ -930,13 +984,17 @@ private fun SettingsNavigationRow(
                     text = title,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -962,7 +1020,9 @@ private fun SettingsNavigationRow(
                         text = badgeText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = activeAccent
+                        color = activeAccent,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             } else {
@@ -970,7 +1030,9 @@ private fun SettingsNavigationRow(
                     text = badgeText,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = activeAccent
+                    color = activeAccent,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
 
