@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Info
@@ -44,8 +45,10 @@ import lat.pam.jejakibadah.ui.theme.*
 @Composable
 fun SettingsScreen(
     selectedThemeMode: Int = 2,
+    userEmail: String? = null,
     onThemeModeChange: (Int) -> Unit = {},
     onOpenLogin: () -> Unit = {},
+    onLogout: () -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
     val isDark = when (selectedThemeMode) {
@@ -53,6 +56,8 @@ fun SettingsScreen(
         1 -> true
         else -> isSystemInDarkTheme()
     }
+
+    val isSignedIn = !userEmail.isNullOrBlank()
 
     // State Interaktif Pengaturan
     var selectedCity by remember { mutableStateOf("Bandung, Jawa Barat") }
@@ -66,6 +71,7 @@ fun SettingsScreen(
     // State BottomSheet Konfirmasi & Info
     var showResetSheet by remember { mutableStateOf(false) }
     var showAntiDelaySheet by remember { mutableStateOf(false) }
+    var showLogoutSheet by remember { mutableStateOf(false) }
     var statusToastMessage by remember { mutableStateOf<String?>(null) }
 
     val activeAccent = if (isDark) BrandCyan else BrandBlue
@@ -169,10 +175,16 @@ fun SettingsScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // Kartu Pengaturan Awal (Membuka ulang OnboardingScreen / LoginScreen)
+                // Kartu Status Akun & Pencadangan Cloud
                 item {
                     Surface(
-                        onClick = onOpenLogin,
+                        onClick = {
+                            if (isSignedIn) {
+                                showLogoutSheet = true
+                            } else {
+                                onOpenLogin()
+                            }
+                        },
                         shape = RoundedCornerShape(18.dp),
                         color = MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
@@ -192,22 +204,26 @@ fun SettingsScreen(
                                     .padding(end = 8.dp)
                             ) {
                                 SettingsLeadingIcon(
-                                    icon = Icons.Rounded.Person,
-                                    tint = activeAccent,
-                                    bg = iconContainerBg,
-                                    border = iconContainerBorder
+                                    icon = if (isSignedIn) Icons.Rounded.CloudDone else Icons.Rounded.Person,
+                                    tint = if (isSignedIn) (if (isDark) EmeraldDark else EmeraldLight) else activeAccent,
+                                    bg = if (isSignedIn) (if (isDark) EmeraldBgDark else EmeraldBgLight) else iconContainerBg,
+                                    border = if (isSignedIn) (if (isDark) EmeraldDark.copy(alpha = 0.4f) else EmeraldLight.copy(alpha = 0.35f)) else iconContainerBorder
                                 )
                                 Column {
                                     Text(
-                                        text = "Preferensi Awal & Target Ibadah",
+                                        text = if (isSignedIn) userEmail!! else "Mode Offline Lokal",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 2,
+                                        maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "Atur ulang bahasa, lokasi, & ibadah sunnah",
+                                        text = if (isSignedIn) {
+                                            "Pencadangan streak & ibadah aktif"
+                                        } else {
+                                            "Masuk akun untuk cadangkan streak ke cloud"
+                                        },
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -219,14 +235,24 @@ fun SettingsScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(BrandBlue)
+                                    .background(
+                                        if (isSignedIn) {
+                                            if (isDark) Color(0xFF450A0A) else Color(0xFFFEF2F2)
+                                        } else {
+                                            BrandBlue
+                                        }
+                                    )
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = "Atur",
+                                    text = if (isSignedIn) "Keluar" else "Masuk",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = if (isSignedIn) {
+                                        if (isDark) Color(0xFFF87171) else Color(0xFFDC2626)
+                                    } else {
+                                        Color.White
+                                    },
                                     maxLines = 1,
                                     softWrap = false
                                 )
@@ -685,10 +711,10 @@ fun SettingsScreen(
                 }
 
                 // =========================================================
-                // SECTION 3: DATA & PRIVASI (100% OFFLINE)
+                // SECTION 3: DATA & PRIVASI
                 // =========================================================
                 item {
-                    SettingsSectionBlock(title = "DATA & PRIVASI (100% OFFLINE)") {
+                    SettingsSectionBlock(title = "DATA & PRIVASI") {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -757,7 +783,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    statusToastMessage = "Jejak Ibadah v1.0.0 — Aplikasi catatan ibadah 100% offline."
+                                    statusToastMessage = "Jejak Ibadah v1.0.0 — Bebas iklan & privasi terjaga."
                                 }
                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -848,7 +874,7 @@ fun SettingsScreen(
                 }
 
                 // =========================================================
-                // FOOTER OFFLINE GUARANTEE (Ikon Vektor Lock)
+                // FOOTER PRIVACY GUARANTEE (Ikon Vektor Lock)
                 // =========================================================
                 item {
                     Column(
@@ -869,18 +895,84 @@ fun SettingsScreen(
                                 modifier = Modifier.size(13.dp)
                             )
                             Text(
-                                text = "100% Offline & Privat",
+                                text = if (isSignedIn) "Terenkripsi & Tersinkronisasi" else "Aman & Privat (Mode Lokal)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = activeAccent
                             )
                         }
                         Text(
-                            text = "Data tersimpan aman di perangkat Anda",
+                            text = if (isSignedIn) {
+                                "Data ibadah dicadangkan otomatis ke akun Anda"
+                            } else {
+                                "Data tersimpan aman di perangkat Anda"
+                            },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
+                    }
+                }
+            }
+        }
+    }
+
+    // BottomSheet Konfirmasi Keluar Akun
+    if (showLogoutSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showLogoutSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Keluar dari Akun?",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Aplikasi akan beralih ke Mode Offline Lokal. Catatan ibadah yang sudah tersimpan di perangkat tetap aman.",
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { showLogoutSheet = false },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                    ) {
+                        Text("Batal", fontWeight = FontWeight.SemiBold)
+                    }
+                    Button(
+                        onClick = {
+                            showLogoutSheet = false
+                            onLogout()
+                            statusToastMessage = "Berhasil keluar. Kini menggunakan Mode Offline Lokal."
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFDC2626),
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                    ) {
+                        Text("Keluar Akun", fontWeight = FontWeight.Bold)
                     }
                 }
             }
