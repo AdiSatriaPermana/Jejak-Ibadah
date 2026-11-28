@@ -1,36 +1,43 @@
 package lat.pam.jejakibadah
 
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.NightsStay
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material.icons.rounded.WbTwilight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,6 +73,7 @@ data class DailyIbadahItem(
     val iconTint: Color
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     isDarkTheme: Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f,
@@ -96,11 +104,11 @@ fun HomeScreen(
     var ibadahList by remember {
         mutableStateOf(
             listOf(
-                DailyIbadahItem(1, "Subuh", "Salat Subuh", "04:08 WIB • Berjamaah", 14, true, "Tepat Waktu", IbadahCategory.SALAT, Icons.Outlined.WbTwilight, EmeraldLight),
-                DailyIbadahItem(2, "Zuhur", "Salat Zuhur", "11:44 WIB • Tepat Waktu", 12, true, "Tepat Waktu", IbadahCategory.SALAT, Icons.Outlined.WbSunny, AmberLight),
-                DailyIbadahItem(3, "Asar", "Salat Asar", "15:12 WIB • Menanti", 9, false, "Belum", IbadahCategory.SALAT, Icons.Outlined.Schedule, BrandBlue),
-                DailyIbadahItem(4, null, "Dzikir Pagi", "Al-Ma'tsurat Selesai", 7, true, "Selesai", IbadahCategory.DZIKIR, Icons.Outlined.AutoAwesome, Color(0xFF0D9488)),
-                DailyIbadahItem(5, null, "Tilawah Al-Qur'an", "Target 1 Juz (Juz 14)", 4, false, "Lanjutkan", IbadahCategory.TILAWAH, Icons.Outlined.MenuBook, Color(0xFF4F46E5))
+                DailyIbadahItem(1, "Subuh", "Salat Subuh", "04:08 • Berjamaah", 14, true, "Tepat", IbadahCategory.SALAT, Icons.Rounded.WbTwilight, EmeraldLight),
+                DailyIbadahItem(2, "Zuhur", "Salat Zuhur", "11:44 • Tepat Waktu", 12, true, "Tepat", IbadahCategory.SALAT, Icons.Rounded.WbSunny, AmberLight),
+                DailyIbadahItem(3, "Asar", "Salat Asar", "15:12 • Menanti", 9, false, "Catat", IbadahCategory.SALAT, Icons.Rounded.Schedule, BrandBlue),
+                DailyIbadahItem(4, null, "Dzikir Pagi", "Al-Ma'tsurat", 7, true, "Selesai", IbadahCategory.DZIKIR, Icons.Rounded.AutoAwesome, Color(0xFF0D9488)),
+                DailyIbadahItem(5, null, "Tilawah Qur'an", "Juz 14 • Hal 270", 4, false, "Lanjut", IbadahCategory.TILAWAH, Icons.Rounded.MenuBook, Color(0xFF4F46E5))
             )
         )
     }
@@ -129,11 +137,11 @@ fun HomeScreen(
         )
     }
 
-    // State Dialog Interaktif untuk Pencatatan Detail
-    var selectedSalatForDialog by remember { mutableStateOf<DailyIbadahItem?>(null) }
-    var isBerjamaahChecked by remember { mutableStateOf(true) }
-    var tilawahDialogItem by remember { mutableStateOf<DailyIbadahItem?>(null) }
-    var tilawahProgressInput by remember { mutableStateOf("Juz 14 • Halaman 270") }
+    // State BottomSheet Interaktif untuk Pencatatan Detail
+    var selectedSalatForSheet by remember { mutableStateOf<DailyIbadahItem?>(null) }
+    var isBerjamaahChecked by rememberSaveable { mutableStateOf(true) }
+    var tilawahSheetItem by remember { mutableStateOf<DailyIbadahItem?>(null) }
+    var tilawahProgressInput by rememberSaveable { mutableStateOf("Juz 14 • Hal 270") }
 
     val completedCount = ibadahList.count { it.isCompleted }
 
@@ -163,7 +171,7 @@ fun HomeScreen(
                 top = 12.dp,
                 bottom = BottomNavSafePadding + 28.dp
             ),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // 1. Top Bar
             item {
@@ -196,7 +204,7 @@ fun HomeScreen(
                     onPrayerClick = { name ->
                         ibadahList.firstOrNull { it.prayerKey == name }?.let { salat ->
                             isBerjamaahChecked = salat.subtitle.contains("Berjamaah", ignoreCase = true)
-                            selectedSalatForDialog = salat
+                            selectedSalatForSheet = salat
                         }
                     }
                 )
@@ -217,7 +225,7 @@ fun HomeScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
+                            imageVector = Icons.Rounded.CheckCircle,
                             contentDescription = null,
                             tint = if (isDarkTheme) BrandCyan else BrandBlue,
                             modifier = Modifier.size(16.dp)
@@ -254,7 +262,7 @@ fun HomeScreen(
                 }
             }
 
-            // 5. List Checklist Ibadah Harian
+            // 5. List Checklist Ibadah Harian (1 Baris Clean)
             items(ibadahList, key = { it.id }) { item ->
                 IbadahChecklistCard(
                     item = item,
@@ -263,11 +271,11 @@ fun HomeScreen(
                         when (item.category) {
                             IbadahCategory.SALAT -> {
                                 isBerjamaahChecked = item.subtitle.contains("Berjamaah", ignoreCase = true)
-                                selectedSalatForDialog = item
+                                selectedSalatForSheet = item
                             }
                             IbadahCategory.TILAWAH -> {
                                 tilawahProgressInput = item.subtitle
-                                tilawahDialogItem = item
+                                tilawahSheetItem = item
                             }
                             IbadahCategory.DZIKIR -> {
                                 ibadahList = ibadahList.map {
@@ -275,8 +283,8 @@ fun HomeScreen(
                                         val nextDone = !it.isCompleted
                                         it.copy(
                                             isCompleted = nextDone,
-                                            statusLabel = if (nextDone) "Selesai" else "Belum",
-                                            subtitle = if (nextDone) "Al-Ma'tsurat Selesai" else "Bacaan Dzikir Pagi",
+                                            statusLabel = if (nextDone) "Selesai" else "Catat",
+                                            subtitle = if (nextDone) "Al-Ma'tsurat" else "Dzikir Pagi",
                                             streakDays = if (nextDone) it.streakDays + 1 else (it.streakDays - 1).coerceAtLeast(0)
                                         )
                                     } else it
@@ -296,157 +304,272 @@ fun HomeScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        // Dialog Pencatatan Salat (Tepat Waktu / Terlambat / Berjamaah)
-        selectedSalatForDialog?.let { salat ->
+        // BottomSheet Pencatatan Salat (Ramah Jempol)
+        selectedSalatForSheet?.let { salat ->
             val timePrefix = salat.subtitle.substringBefore("•").trim()
-            AlertDialog(
-                onDismissRequest = { selectedSalatForDialog = null },
-                title = {
-                    Text(
-                        text = "Catat ${salat.title}",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            text = "Pilih waktu pelaksanaan salat:",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+            ModalBottomSheet(
+                onDismissRequest = { selectedSalatForSheet = null },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { isBerjamaahChecked = !isBerjamaahChecked }
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(11.dp))
+                                .background(salat.iconTint.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Checkbox(
-                                checked = isBerjamaahChecked,
-                                onCheckedChange = { isBerjamaahChecked = it },
-                                colors = CheckboxDefaults.colors(checkedColor = BrandBlue)
+                            Icon(
+                                imageVector = salat.icon,
+                                contentDescription = null,
+                                tint = salat.iconTint,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Catat ${salat.title}",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Salat Berjamaah",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium
+                                text = "Jadwal masuk pukul $timePrefix WIB",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        val suffix = if (isBerjamaahChecked) "Berjamaah" else "Tepat Waktu"
-                        ibadahList = ibadahList.map {
-                            if (it.id == salat.id) {
-                                it.copy(
-                                    isCompleted = true,
-                                    statusLabel = "Tepat Waktu",
-                                    subtitle = "$timePrefix • $suffix",
-                                    streakDays = if (!it.isCompleted) it.streakDays + 1 else it.streakDays
+
+                    // Toggle Berjamaah
+                    Surface(
+                        onClick = { isBerjamaahChecked = !isBerjamaahChecked },
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isDarkTheme) DarkSubCard else Color(0xFFF8FAFC),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isBerjamaahChecked) BrandBlue.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outline
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Salat Berjamaah",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
-                            } else it
+                                Text(
+                                    text = "Tandai jika dilaksanakan berjamaah",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = isBerjamaahChecked,
+                                onCheckedChange = { isBerjamaahChecked = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = BrandBlue
+                                )
+                            )
                         }
-                        selectedSalatForDialog = null
-                    }) {
-                        Text("Tepat Waktu", color = BrandBlue, fontWeight = FontWeight.Bold)
                     }
-                },
-                dismissButton = {
-                    Row {
-                        TextButton(onClick = {
+
+                    // Tombol Utama: Tepat Waktu
+                    Button(
+                        onClick = {
+                            val suffix = if (isBerjamaahChecked) "Berjamaah" else "Tepat Waktu"
                             ibadahList = ibadahList.map {
                                 if (it.id == salat.id) {
                                     it.copy(
                                         isCompleted = true,
-                                        statusLabel = "Terlambat",
-                                        subtitle = "$timePrefix • Terlambat",
+                                        statusLabel = "Tepat",
+                                        subtitle = "$timePrefix • $suffix",
                                         streakDays = if (!it.isCompleted) it.streakDays + 1 else it.streakDays
                                     )
                                 } else it
                             }
-                            selectedSalatForDialog = null
-                        }) {
-                            Text("Terlambat")
-                        }
-                        if (salat.isCompleted) {
-                            TextButton(onClick = {
+                            selectedSalatForSheet = null
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Simpan Tepat Waktu",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    // Tombol Sekunder: Terlambat & Reset
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
                                 ibadahList = ibadahList.map {
                                     if (it.id == salat.id) {
                                         it.copy(
-                                            isCompleted = false,
-                                            statusLabel = "Belum",
-                                            subtitle = "$timePrefix • Menanti",
-                                            streakDays = (it.streakDays - 1).coerceAtLeast(0)
+                                            isCompleted = true,
+                                            statusLabel = "Telat",
+                                            subtitle = "$timePrefix • Terlambat",
+                                            streakDays = if (!it.isCompleted) it.streakDays + 1 else it.streakDays
                                         )
                                     } else it
                                 }
-                                selectedSalatForDialog = null
-                            }) {
-                                Text("Reset", color = MaterialTheme.colorScheme.error)
+                                selectedSalatForSheet = null
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                        ) {
+                            Text(
+                                text = "Tandai Terlambat",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        if (salat.isCompleted) {
+                            OutlinedButton(
+                                onClick = {
+                                    ibadahList = ibadahList.map {
+                                        if (it.id == salat.id) {
+                                            it.copy(
+                                                isCompleted = false,
+                                                statusLabel = "Catat",
+                                                subtitle = "$timePrefix • Menanti",
+                                                streakDays = (it.streakDays - 1).coerceAtLeast(0)
+                                            )
+                                        } else it
+                                    }
+                                    selectedSalatForSheet = null
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                                modifier = Modifier.height(44.dp)
+                            ) {
+                                Text(
+                                    text = "Reset",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
                         }
                     }
                 }
-            )
+            }
         }
 
-        // Dialog Progres Tilawah Al-Qur'an
-        tilawahDialogItem?.let { tilawah ->
-            AlertDialog(
-                onDismissRequest = { tilawahDialogItem = null },
-                title = {
+        // BottomSheet Progres Tilawah Al-Qur'an
+        tilawahSheetItem?.let { tilawah ->
+            ModalBottomSheet(
+                onDismissRequest = { tilawahSheetItem = null },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                     Text(
                         text = "Progres Tilawah Hari Ini",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Catat batas bacaan terakhir atau tandai target hari ini selesai:",
-                            fontSize = 13.sp
-                        )
-                        OutlinedTextField(
-                            value = tilawahProgressInput,
-                            onValueChange = { tilawahProgressInput = it },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        ibadahList = ibadahList.map {
-                            if (it.id == tilawah.id) {
-                                it.copy(
-                                    isCompleted = true,
-                                    statusLabel = "Selesai",
-                                    subtitle = tilawahProgressInput,
-                                    streakDays = if (!it.isCompleted) it.streakDays + 1 else it.streakDays
-                                )
-                            } else it
+                    Text(
+                        text = "Catat batas juz & halaman terakhir dibaca:",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = tilawahProgressInput,
+                        onValueChange = { tilawahProgressInput = it },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                ibadahList = ibadahList.map {
+                                    if (it.id == tilawah.id) {
+                                        it.copy(subtitle = tilawahProgressInput)
+                                    } else it
+                                }
+                                tilawahSheetItem = null
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                        ) {
+                            Text("Simpan Batas", fontWeight = FontWeight.SemiBold)
                         }
-                        tilawahDialogItem = null
-                    }) {
-                        Text("Tandai Selesai", color = BrandBlue, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = {
-                        ibadahList = ibadahList.map {
-                            if (it.id == tilawah.id) {
-                                it.copy(subtitle = tilawahProgressInput)
-                            } else it
+                        Button(
+                            onClick = {
+                                ibadahList = ibadahList.map {
+                                    if (it.id == tilawah.id) {
+                                        it.copy(
+                                            isCompleted = true,
+                                            statusLabel = "Selesai",
+                                            subtitle = tilawahProgressInput,
+                                            streakDays = if (!it.isCompleted) it.streakDays + 1 else it.streakDays
+                                        )
+                                    } else it
+                                }
+                                tilawahSheetItem = null
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                        ) {
+                            Text("Selesai Hari Ini", fontWeight = FontWeight.Bold)
                         }
-                        tilawahDialogItem = null
-                    }) {
-                        Text("Simpan Progres")
                     }
                 }
-            )
+            }
         }
     }
 }
@@ -469,7 +592,7 @@ private fun DashboardTopBar(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Filled.LocationOn,
+                    imageVector = Icons.Rounded.LocationOn,
                     contentDescription = "Lokasi",
                     tint = if (isDark) BrandCyan else BrandBlue,
                     modifier = Modifier.size(16.dp)
@@ -503,7 +626,7 @@ private fun DashboardTopBar(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    imageVector = Icons.Outlined.Settings,
+                    imageVector = Icons.Rounded.Settings,
                     contentDescription = "Pengaturan",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
@@ -635,7 +758,7 @@ private fun NextPrayerHeroCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Explore,
+                            imageVector = Icons.Rounded.Explore,
                             contentDescription = "Buka Kompas Kiblat",
                             tint = Color.White,
                             modifier = Modifier.size(12.dp)
@@ -661,7 +784,7 @@ private fun NextPrayerHeroCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(if (allDoneToday) 1f else 0.68f)
+                        .fillMaxWidth(heroProgress)
                         .fillMaxHeight()
                         .clip(CircleShape)
                         .background(if (isDark) Color(0xFF67E8F9) else Color.White)
@@ -708,7 +831,7 @@ private fun PrayerTimesStrip(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.NightsStay,
+                    imageVector = Icons.Rounded.NightsStay,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp)
@@ -731,7 +854,7 @@ private fun PrayerTimesStrip(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.WbSunny,
+                    imageVector = Icons.Rounded.WbSunny,
                     contentDescription = null,
                     tint = Color(0xFFF59E0B),
                     modifier = Modifier.size(14.dp)
@@ -802,19 +925,19 @@ private fun PrayerTimesStrip(
                         )
                         when {
                             slot.isDone -> Icon(
-                                imageVector = Icons.Default.Check,
+                                imageVector = Icons.Rounded.Check,
                                 contentDescription = "Selesai",
                                 tint = if (isDark) EmeraldDark else EmeraldLight,
                                 modifier = Modifier.size(14.dp)
                             )
                             slot.isNext -> Icon(
-                                imageVector = Icons.Default.Notifications,
+                                imageVector = Icons.Rounded.Notifications,
                                 contentDescription = "Berikutnya",
                                 tint = Color(0xFFDBEAFE),
                                 modifier = Modifier.size(14.dp)
                             )
                             else -> Icon(
-                                imageVector = Icons.Outlined.Schedule,
+                                imageVector = Icons.Rounded.Schedule,
                                 contentDescription = "Menanti",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                                 modifier = Modifier.size(14.dp)
@@ -837,152 +960,166 @@ private fun IbadahChecklistCard(
         onClick = onCardClick,
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (item.isCompleted) {
+                if (isDark) EmeraldDark.copy(alpha = 0.28f) else EmeraldLight.copy(alpha = 0.25f)
+            } else {
+                MaterialTheme.colorScheme.outline
+            }
+        )
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 11.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            // Ikon kategori membulat
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(item.iconTint.copy(alpha = if (isDark) 0.18f else 0.11f)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(item.iconTint.copy(alpha = if (isDark) 0.18f else 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = null,
-                        tint = item.iconTint,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = item.title,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = item.subtitle,
-                        fontSize = 11.sp,
-                        color = if (!item.isCompleted && item.category == IbadahCategory.SALAT) {
-                            if (isDark) BrandCyan else BrandBlue
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (isDark) AmberBgDark.copy(alpha = 0.7f) else AmberBgLight)
-                        .border(
-                            1.dp,
-                            if (isDark) AmberDark.copy(alpha = 0.25f) else AmberLight.copy(alpha = 0.2f),
-                            RoundedCornerShape(6.dp)
-                        )
-                        .padding(horizontal = 6.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = "🔥 ${item.streakDays} hr",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) AmberDark else AmberLight,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                }
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = null,
+                    tint = item.iconTint,
+                    modifier = Modifier.size(18.dp)
+                )
             }
 
+            // Judul & keterangan waktu
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.title,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(1.dp))
+                Text(
+                    text = item.subtitle,
+                    fontSize = 11.sp,
+                    color = if (!item.isCompleted && item.category == IbadahCategory.SALAT) {
+                        if (isDark) BrandCyan else BrandBlue
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Chip Streak dengan Ikon Api Vektor
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isDark) AmberBgDark.copy(alpha = 0.7f) else AmberBgLight)
+                    .border(
+                        1.dp,
+                        if (isDark) AmberDark.copy(alpha = 0.25f) else AmberLight.copy(alpha = 0.2f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                when {
-                    item.isCompleted -> {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(if (isDark) EmeraldBgDark.copy(alpha = 0.75f) else EmeraldBgLight)
-                                .border(
-                                    1.dp,
-                                    if (isDark) EmeraldDark.copy(alpha = 0.4f) else EmeraldLight.copy(alpha = 0.3f),
-                                    CircleShape
-                                )
-                                .padding(horizontal = 11.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "✓ ${item.statusLabel}",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isDark) EmeraldDark else EmeraldLight,
-                                maxLines = 1,
-                                softWrap = false
+                Icon(
+                    imageVector = Icons.Rounded.LocalFireDepartment,
+                    contentDescription = "Streak",
+                    tint = if (isDark) AmberDark else AmberLight,
+                    modifier = Modifier.size(12.dp)
+                )
+                Text(
+                    text = "${item.streakDays}h",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) AmberDark else AmberLight,
+                    maxLines = 1,
+                    softWrap = false
+                )
+            }
+
+            // Tombol Status Ringkas (1 Baris)
+            when {
+                item.isCompleted -> {
+                    Row(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (isDark) EmeraldBgDark.copy(alpha = 0.8f) else EmeraldBgLight)
+                            .border(
+                                1.dp,
+                                if (isDark) EmeraldDark.copy(alpha = 0.4f) else EmeraldLight.copy(alpha = 0.3f),
+                                CircleShape
                             )
-                        }
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = if (isDark) EmeraldDark else EmeraldLight,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = item.statusLabel,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) EmeraldDark else EmeraldLight,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
-                    item.category == IbadahCategory.TILAWAH -> {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.background)
-                                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    text = "Lanjutkan",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
+                }
+                item.category == IbadahCategory.TILAWAH -> {
+                    Row(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.background)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.PlayArrow,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "Lanjut",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
-                    else -> {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(if (isDark) BrandBlue.copy(alpha = 0.16f) else BrandBlue.copy(alpha = 0.08f))
-                                .border(1.dp, BrandBlue.copy(alpha = 0.35f), CircleShape)
-                                .padding(horizontal = 11.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "Catat Ibadah",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (isDark) BrandCyan else BrandBlue,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
+                }
+                else -> {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (isDark) BrandBlue.copy(alpha = 0.18f) else BrandBlue.copy(alpha = 0.1f))
+                            .border(1.dp, BrandBlue.copy(alpha = 0.35f), CircleShape)
+                            .padding(horizontal = 11.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = "Catat",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) BrandCyan else BrandBlue,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }

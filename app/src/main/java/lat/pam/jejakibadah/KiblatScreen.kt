@@ -7,19 +7,23 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,15 +35,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import lat.pam.jejakibadah.ui.theme.*
 import kotlin.math.cos
 import kotlin.math.sin
+import lat.pam.jejakibadah.ui.theme.*
 
 data class HijriDayCellData(
     val dayName: String,
@@ -50,9 +56,10 @@ data class HijriDayCellData(
     val isWeekend: Boolean = false
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun KiblatScreen(
-    isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isDarkTheme: Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f,
     onNavigateTab: (Int) -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
@@ -64,7 +71,7 @@ fun KiblatScreen(
     var qiblaDegree by remember { mutableFloatStateOf(295f) }
     var hapticEnabled by remember { mutableStateOf(true) }
     var isCalibrating by remember { mutableStateOf(false) }
-    var showCalibrationDialog by remember { mutableStateOf(false) }
+    var showCalibrationSheet by remember { mutableStateOf(false) }
 
     // Animasi rotasi jarum kompas (295° = -65° dari arah Utara atas)
     val needleAngle by animateFloatAsState(
@@ -123,7 +130,10 @@ fun KiblatScreen(
             .statusBarsPadding()
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .widthIn(max = 640.dp)
+                .fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 18.dp,
                 end = 18.dp,
@@ -214,8 +224,8 @@ fun KiblatScreen(
                                 .padding(4.dp)
                         ) {
                             val tabs = listOf(
-                                Pair("Arah Kiblat", Icons.Outlined.Place),
-                                Pair("Kalender Hijriah", Icons.Default.DateRange)
+                                Pair("Arah Kiblat", Icons.Rounded.Place),
+                                Pair("Kalender Hijriah", Icons.Rounded.DateRange)
                             )
                             tabs.forEachIndexed { index, (label, icon) ->
                                 val active = selectedTabMode == index
@@ -266,7 +276,7 @@ fun KiblatScreen(
                             }
                         },
                         onRecalibrate = {
-                            showCalibrationDialog = true
+                            showCalibrationSheet = true
                         }
                     )
                 }
@@ -292,38 +302,91 @@ fun KiblatScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        // Dialog Panduan Kalibrasi Kompas (Angka 8)
-        if (showCalibrationDialog) {
-            AlertDialog(
-                onDismissRequest = { showCalibrationDialog = false },
-                title = {
-                    Text(
-                        text = "Kalibrasi Sensor Kompas",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Text(
-                        text = "Gerakkan ponsel membentuk pola angka 8 (∞) sebanyak 2–3 kali jauh dari benda logam atau magnet untuk menyegarkan akurasi sensor.",
-                        fontSize = 13.sp
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showCalibrationDialog = false
-                        isCalibrating = true
-                        qiblaDegree = 295f
-                    }) {
-                        Text("Mulai Kalibrasi", color = BrandBlue, fontWeight = FontWeight.Bold)
+        // BottomSheet Panduan Kalibrasi Kompas (Angka 8)
+        if (showCalibrationSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showCalibrationSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(11.dp))
+                                .background(BrandBlue.copy(alpha = 0.14f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Explore,
+                                contentDescription = null,
+                                tint = if (isDarkTheme) BrandCyan else BrandBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Kalibrasi Sensor Kompas",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Tingkatkan akurasi arah kiblat",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showCalibrationDialog = false }) {
-                        Text("Batal")
+
+                    Text(
+                        text = "Gerakkan ponsel membentuk pola angka 8 (∞) sebanyak 2–3 kali jauh dari benda logam atau magnet untuk menyegarkan akurasi sensor magnetometer.",
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showCalibrationSheet = false },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                        ) {
+                            Text("Tutup", fontWeight = FontWeight.SemiBold)
+                        }
+                        Button(
+                            onClick = {
+                                showCalibrationSheet = false
+                                isCalibrating = true
+                                qiblaDegree = 295f
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                        ) {
+                            Text("Mulai Kalibrasi", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
-            )
+            }
         }
     }
 }
@@ -403,36 +466,44 @@ private fun QiblaCompassCard(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = activeAccent,
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 14.dp)
                 )
                 Text(
                     text = "T",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 16.dp)
                 )
                 Text(
                     text = "S",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp)
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 14.dp)
                 )
                 Text(
                     text = "B",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 16.dp)
                 )
 
-                // Penanda Target Ka'bah di Barat Laut (~295°)
+                // Penanda Target Ka'bah di Barat Laut (~295°) dengan jarak aman dari garis lingkaran
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = 26.dp, top = 18.dp)
+                        .padding(start = 18.dp, top = 16.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -443,7 +514,7 @@ private fun QiblaCompassCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.LocationOn,
+                            imageVector = Icons.Rounded.LocationOn,
                             contentDescription = "Ka'bah",
                             tint = Color.White,
                             modifier = Modifier.size(16.dp)
@@ -549,7 +620,7 @@ private fun QiblaCompassCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
+                        imageVector = Icons.Rounded.CheckCircle,
                         contentDescription = null,
                         tint = if (isDark) EmeraldDark else EmeraldLight,
                         modifier = Modifier.size(15.dp)
@@ -605,11 +676,11 @@ private fun QiblaCompassCard(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "≈",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = activeAccent
+                        Icon(
+                            imageVector = if (hapticEnabled) Icons.Rounded.GraphicEq else Icons.Rounded.VolumeOff,
+                            contentDescription = null,
+                            tint = if (hapticEnabled) activeAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
@@ -636,9 +707,9 @@ private fun QiblaCompassCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Refresh,
+                            imageVector = Icons.Rounded.Refresh,
                             contentDescription = "Kalibrasi",
-                            tint = BrandBlue,
+                            tint = activeAccent,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
@@ -710,10 +781,10 @@ private fun HijriCalendarCard(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                                 contentDescription = "Sebelumnya",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -725,10 +796,10 @@ private fun HijriCalendarCard(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                                 contentDescription = "Berikutnya",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -808,7 +879,8 @@ private fun HijriCalendarCard(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AgendaItemRow(
-                    emoji = "⭐",
+                    icon = Icons.Rounded.Star,
+                    iconTint = if (isDark) AmberDark else AmberLight,
                     title = "Isra Mi'raj 1448 H",
                     subtitle = "27 Nov • 17 Rajab 1448 H",
                     badge = "Libur",
@@ -816,7 +888,8 @@ private fun HijriCalendarCard(
                     isDark = isDark
                 )
                 AgendaItemRow(
-                    emoji = "✨",
+                    icon = Icons.Rounded.AutoAwesome,
+                    iconTint = activeAccent,
                     title = "Puasa Ayyamul Bidh",
                     subtitle = "23–25 Nov • 13, 14, 15 Rajab",
                     badge = "Sunnah",
@@ -830,7 +903,8 @@ private fun HijriCalendarCard(
 
 @Composable
 private fun AgendaItemRow(
-    emoji: String,
+    icon: ImageVector,
+    iconTint: Color,
     title: String,
     subtitle: String,
     badge: String,
@@ -851,12 +925,17 @@ private fun AgendaItemRow(
         ) {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(BrandBlue.copy(alpha = 0.14f)),
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(iconTint.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = emoji, fontSize = 12.sp)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(16.dp)
+                )
             }
 
             Column(modifier = Modifier.weight(1f)) {
