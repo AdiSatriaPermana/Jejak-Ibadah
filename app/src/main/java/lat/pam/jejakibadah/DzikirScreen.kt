@@ -1,12 +1,14 @@
 package lat.pam.jejakibadah
 
 import android.content.Intent
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,22 +16,28 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.VolumeOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -56,7 +64,7 @@ data class DzikirTemplateItem(
 
 @Composable
 fun DzikirScreen(
-    isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isDarkTheme: Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f,
     onNavigateTab: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -147,7 +155,10 @@ fun DzikirScreen(
             .statusBarsPadding()
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .widthIn(max = 640.dp)
+                .fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 18.dp,
                 end = 18.dp,
@@ -163,7 +174,11 @@ fun DzikirScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 12.dp)
+                    ) {
                         Text(
                             text = "Dzikir & Tasbih",
                             fontSize = 20.sp,
@@ -200,7 +215,7 @@ fun DzikirScreen(
                             }
                         }
 
-                        // Tombol Toggle Haptic
+                        // Tombol Toggle Haptic (Ikon Vektor Rounded)
                         Surface(
                             onClick = { hapticEnabled = !hapticEnabled },
                             shape = CircleShape,
@@ -212,11 +227,11 @@ fun DzikirScreen(
                             modifier = Modifier.size(36.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "≈",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (hapticEnabled) (if (isDarkTheme) BrandCyan else BrandBlue) else MaterialTheme.colorScheme.onSurfaceVariant
+                                Icon(
+                                    imageVector = if (hapticEnabled) Icons.Rounded.GraphicEq else Icons.Rounded.VolumeOff,
+                                    contentDescription = "Getar Haptic",
+                                    tint = if (hapticEnabled) (if (isDarkTheme) BrandCyan else BrandBlue) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
@@ -272,7 +287,7 @@ fun DzikirScreen(
                 }
             }
 
-            // 3. Sub-tabs Category Filter Pills (Muncul pada mode Bacaan Dzikir)
+            // 3. Mode 0: Daftar Bacaan Dzikir
             if (selectedMode == 0) {
                 item {
                     LazyRow(
@@ -302,7 +317,6 @@ fun DzikirScreen(
                     }
                 }
 
-                // 4. Kartu Bacaan Dzikir Template
                 items(filteredTemplates, key = { it.id }) { item ->
                     DzikirTemplateCard(
                         item = item,
@@ -330,48 +344,48 @@ fun DzikirScreen(
                         }
                     )
                 }
-            }
-
-            // 5. Kartu Tasbih Digital
-            item {
-                DigitalTasbihCard(
-                    title = tasbihTitle,
-                    count = tasbihCount,
-                    target = tasbihTarget,
-                    isDark = isDarkTheme,
-                    hapticEnabled = hapticEnabled,
-                    savedMessage = savedMessage,
-                    onIncrement = {
-                        if (hapticEnabled) {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        }
-                        savedMessage = false
-                        tasbihCount = if (tasbihTarget > 0 && tasbihCount >= tasbihTarget) {
+            } else {
+                // 4. Mode 1: Tasbih Digital (Fokus Penuh & Interaktif)
+                item {
+                    DigitalTasbihCard(
+                        title = tasbihTitle,
+                        count = tasbihCount,
+                        target = tasbihTarget,
+                        isDark = isDarkTheme,
+                        hapticEnabled = hapticEnabled,
+                        savedMessage = savedMessage,
+                        onIncrement = {
                             if (hapticEnabled) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
-                            1
-                        } else {
-                            tasbihCount + 1
-                        }
-                    },
-                    onReset = {
-                        tasbihCount = 0
-                        savedMessage = false
-                    },
-                    onSelectTarget = { newTarget ->
-                        tasbihTarget = newTarget
-                        if (newTarget > 0 && tasbihCount > newTarget) {
+                            savedMessage = false
+                            tasbihCount = if (tasbihTarget > 0 && tasbihCount >= tasbihTarget) {
+                                if (hapticEnabled) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                }
+                                1
+                            } else {
+                                tasbihCount + 1
+                            }
+                        },
+                        onReset = {
                             tasbihCount = 0
-                        }
-                    },
-                    onToggleHaptic = { hapticEnabled = !hapticEnabled },
-                    onSaveLog = { savedMessage = true }
-                )
+                            savedMessage = false
+                        },
+                        onSelectTarget = { newTarget ->
+                            tasbihTarget = newTarget
+                            if (newTarget > 0 && tasbihCount > newTarget) {
+                                tasbihCount = 0
+                            }
+                        },
+                        onToggleHaptic = { hapticEnabled = !hapticEnabled },
+                        onSaveLog = { savedMessage = true }
+                    )
+                }
             }
         }
 
-        // 6. Floating Pill Navbar Konsisten (Index 2 = Dzikir aktif)
+        // 5. Floating Pill Navbar Konsisten (Index 2 = Dzikir aktif)
         AppBottomNavbar(
             selectedIndex = 2,
             isDark = isDarkTheme,
@@ -396,7 +410,6 @@ private fun DzikirTemplateCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Top Row: Title + Repeat Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -449,7 +462,6 @@ private fun DzikirTemplateCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Template Lafaz Latin
             Text(
                 text = item.transliteration,
                 fontSize = bodyFontSize,
@@ -461,7 +473,6 @@ private fun DzikirTemplateCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Terjemahan / Makna Template
             Text(
                 text = item.translation,
                 fontSize = (bodyFontSize.value - 1).sp,
@@ -473,7 +484,6 @@ private fun DzikirTemplateCard(
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Footer: Reference & Action Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -493,19 +503,19 @@ private fun DzikirTemplateCard(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SmallCircleAction(
-                        icon = Icons.Default.PlayArrow,
+                        icon = Icons.Rounded.PlayArrow,
                         contentDesc = "Hitung di Tasbih",
                         isDark = isDark,
                         onClick = onPracticeTasbih
                     )
                     SmallCircleAction(
-                        icon = Icons.Default.Share,
+                        icon = Icons.Rounded.Share,
                         contentDesc = "Bagikan",
                         isDark = isDark,
                         onClick = onShare
                     )
                     SmallCircleAction(
-                        icon = if (item.isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        icon = if (item.isBookmarked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
                         contentDesc = "Simpan",
                         isDark = isDark,
                         tint = if (item.isBookmarked) BrandBlue else null,
@@ -519,7 +529,7 @@ private fun DzikirTemplateCard(
 
 @Composable
 private fun SmallCircleAction(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     contentDesc: String,
     isDark: Boolean,
     tint: Color? = null,
@@ -557,10 +567,21 @@ private fun DigitalTasbihCard(
     onToggleHaptic: () -> Unit,
     onSaveLog: () -> Unit
 ) {
-    val progress = when {
+    val rawProgress = when {
         target <= 0 -> (count % 100) / 100f
         else -> (count.toFloat() / target.toFloat()).coerceIn(0f, 1f)
     }
+    val animatedProgress by animateFloatAsState(
+        targetValue = rawProgress,
+        label = "tasbihProgress"
+    )
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val circleScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        label = "tasbihScale"
+    )
 
     val ringActiveColor = if (isDark) BrandCyan else BrandBlue
     val ringTrackColor = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9)
@@ -570,8 +591,7 @@ private fun DigitalTasbihCard(
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header + Target Pill Selector (33, 99, ∞)
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -631,22 +651,32 @@ private fun DigitalTasbihCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Centralized Circular Progress Ring Counter
+            // Lingkaran Hitung yang Lega & Memantul Halus saat Diketuk
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .size(152.dp)
+                        .size(188.dp)
+                        .scale(circleScale)
                         .clip(CircleShape)
-                        .clickable { onIncrement() },
+                        .background(if (isDark) DarkSubCard.copy(alpha = 0.65f) else Color(0xFFF8FAFC))
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onIncrement
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-                        val strokeWidth = 9.dp.toPx()
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(10.dp)
+                    ) {
+                        val strokeWidth = 10.dp.toPx()
                         val diameter = size.minDimension - strokeWidth
                         val topLeft = Offset(
                             (size.width - diameter) / 2f,
@@ -667,7 +697,7 @@ private fun DigitalTasbihCard(
                         drawArc(
                             color = ringActiveColor,
                             startAngle = -90f,
-                            sweepAngle = 360f * progress,
+                            sweepAngle = 360f * animatedProgress,
                             useCenter = false,
                             topLeft = topLeft,
                             size = arcSize,
@@ -678,29 +708,30 @@ private fun DigitalTasbihCard(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "$count",
-                            fontSize = 38.sp,
+                            fontSize = 44.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 40.sp
+                            lineHeight = 46.sp
                         )
                         Text(
                             text = if (target > 0) "/ $target" else "/ ∞",
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = title,
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Ketuk lingkaran di atas untuk menghitung",
                     fontSize = 11.sp,
@@ -708,31 +739,65 @@ private fun DigitalTasbihCard(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                Box(
+                Row(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(if (isDark) BrandBlue.copy(alpha = 0.2f) else Color(0xFFF0F9FF))
+                        .background(
+                            if (savedMessage) {
+                                if (isDark) EmeraldBgDark else EmeraldBgLight
+                            } else if (isDark) {
+                                BrandBlue.copy(alpha = 0.2f)
+                            } else {
+                                Color(0xFFF0F9FF)
+                            }
+                        )
                         .border(
                             1.dp,
-                            if (isDark) BrandCyan.copy(alpha = 0.3f) else Color(0xFFBAE6FD),
+                            if (savedMessage) {
+                                if (isDark) EmeraldDark.copy(alpha = 0.4f) else EmeraldLight.copy(alpha = 0.35f)
+                            } else if (isDark) {
+                                BrandCyan.copy(alpha = 0.3f)
+                            } else {
+                                Color(0xFFBAE6FD)
+                            },
                             CircleShape
                         )
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
+                    Icon(
+                        imageVector = if (savedMessage) Icons.Rounded.CheckCircle else if (hapticEnabled) Icons.Rounded.GraphicEq else Icons.Rounded.VolumeOff,
+                        contentDescription = null,
+                        tint = if (savedMessage) {
+                            if (isDark) EmeraldDark else EmeraldLight
+                        } else if (isDark) {
+                            BrandCyan
+                        } else {
+                            BrandBlue
+                        },
+                        modifier = Modifier.size(13.dp)
+                    )
                     Text(
-                        text = if (savedMessage) "✓ Tersimpan ke catatan dzikir hari ini"
-                        else if (hapticEnabled) "• Getar haptic aktif"
-                        else "• Mode senyap (tanpa getar)",
-                        fontSize = 10.sp,
+                        text = if (savedMessage) "Tersimpan ke catatan dzikir hari ini"
+                        else if (hapticEnabled) "Getar haptic aktif"
+                        else "Mode senyap (tanpa getar)",
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) BrandCyan else BrandBlue
+                        color = if (savedMessage) {
+                            if (isDark) EmeraldDark else EmeraldLight
+                        } else if (isDark) {
+                            BrandCyan
+                        } else {
+                            BrandBlue
+                        }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -746,19 +811,19 @@ private fun DigitalTasbihCard(
                     modifier = Modifier
                         .clip(CircleShape)
                         .clickable { onReset() }
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Refresh,
+                        imageVector = Icons.Rounded.Refresh,
                         contentDescription = "Reset",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
                         text = "Reset",
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -767,13 +832,19 @@ private fun DigitalTasbihCard(
                     modifier = Modifier
                         .clip(CircleShape)
                         .clickable { onToggleHaptic() }
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    Icon(
+                        imageVector = if (hapticEnabled) Icons.Rounded.GraphicEq else Icons.Rounded.VolumeOff,
+                        contentDescription = null,
+                        tint = if (hapticEnabled) (if (isDark) BrandCyan else BrandBlue) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp)
+                    )
                     Text(
-                        text = if (hapticEnabled) "Haptic Aktif" else "Haptic Nonaktif",
-                        fontSize = 11.sp,
+                        text = if (hapticEnabled) "Haptic" else "Senyap",
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (hapticEnabled) (if (isDark) BrandCyan else BrandBlue) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -783,19 +854,19 @@ private fun DigitalTasbihCard(
                     modifier = Modifier
                         .clip(CircleShape)
                         .clickable { onSaveLog() }
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Check,
+                        imageVector = Icons.Rounded.Check,
                         contentDescription = "Simpan",
                         tint = if (isDark) EmeraldDark else EmeraldLight,
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
                         text = "Simpan",
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isDark) EmeraldDark else EmeraldLight
                     )

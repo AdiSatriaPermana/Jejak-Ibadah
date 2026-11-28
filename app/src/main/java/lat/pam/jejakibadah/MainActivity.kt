@@ -6,7 +6,18 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -14,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import lat.pam.jejakibadah.ui.theme.JejakIbadahTheme
 
 class MainActivity : ComponentActivity() {
@@ -61,53 +73,81 @@ class MainActivity : ComponentActivity() {
             }
 
             JejakIbadahTheme(darkTheme = useDarkTheme) {
-                when {
-                    !isOnboardingCompleted -> {
-                        // Sementara masih memanggil LoginScreen, nanti diganti OnboardingScreen
-                        LoginScreen(
-                            isDarkTheme = useDarkTheme,
-                            onToggleTheme = {
-                                themeMode = if (useDarkTheme) 0 else 1
-                            },
-                            onLoginSuccess = { isOnboardingCompleted = true },
-                            onContinueOffline = { isOnboardingCompleted = true },
-                            onNavigateBack = { isOnboardingCompleted = true }
-                        )
-                    }
-                    showSettings -> {
-                        SettingsScreen(
-                            selectedThemeMode = themeMode,
-                            onThemeModeChange = { themeMode = it },
-                            onOpenLogin = { isOnboardingCompleted = false },
-                            onNavigateBack = { showSettings = false }
-                        )
-                    }
-                    else -> {
-                        saveableStateHolder.SaveableStateProvider(currentTab) {
-                            when (currentTab) {
-                                0 -> HomeScreen(
+                // Key gabungan untuk mendeteksi perpindahan layar utama secara halus
+                val screenRouteKey = when {
+                    !isOnboardingCompleted -> "onboarding"
+                    showSettings -> "settings"
+                    else -> "tab_$currentTab"
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                ) {
+                    AnimatedContent(
+                        targetState = screenRouteKey,
+                        transitionSpec = {
+                            if (targetState == "settings" || initialState == "settings") {
+                                // Pengaturan muncul/turun lembut dari bawah
+                                (fadeIn(tween(220)) + slideInVertically(tween(240)) { it / 18 })
+                                    .togetherWith(fadeOut(tween(180)) + slideOutVertically(tween(200)) { it / 18 })
+                            } else {
+                                // Perpindahan antar tab & onboarding pakai crossfade cepat tanpa berkedip
+                                fadeIn(tween(180)) togetherWith fadeOut(tween(140))
+                            }
+                        },
+                        label = "screen_transition"
+                    ) { route ->
+                        when (route) {
+                            "onboarding" -> {
+                                LoginScreen(
                                     isDarkTheme = useDarkTheme,
-                                    onNavigateTab = { currentTab = it },
-                                    onOpenSettings = { showSettings = true }
+                                    onToggleTheme = {
+                                        themeMode = if (useDarkTheme) 0 else 1
+                                    },
+                                    onLoginSuccess = { isOnboardingCompleted = true },
+                                    onContinueOffline = { isOnboardingCompleted = true },
+                                    onNavigateBack = { isOnboardingCompleted = true }
                                 )
-                                1 -> JejakScreen(
-                                    isDarkTheme = useDarkTheme,
-                                    onOpenSettings = { showSettings = true },
-                                    onNavigateTab = { currentTab = it }
+                            }
+                            "settings" -> {
+                                SettingsScreen(
+                                    selectedThemeMode = themeMode,
+                                    onThemeModeChange = { themeMode = it },
+                                    onOpenLogin = { isOnboardingCompleted = false },
+                                    onNavigateBack = { showSettings = false }
                                 )
-                                2 -> DzikirScreen(
-                                    isDarkTheme = useDarkTheme,
-                                    onNavigateTab = { currentTab = it }
-                                )
-                                3 -> KiblatScreen(
-                                    isDarkTheme = useDarkTheme,
-                                    onNavigateTab = { currentTab = it }
-                                )
-                                else -> HomeScreen(
-                                    isDarkTheme = useDarkTheme,
-                                    onNavigateTab = { currentTab = it },
-                                    onOpenSettings = { showSettings = true }
-                                )
+                            }
+                            else -> {
+                                val tabIndex = route.removePrefix("tab_").toIntOrNull() ?: 0
+                                saveableStateHolder.SaveableStateProvider(tabIndex) {
+                                    when (tabIndex) {
+                                        0 -> HomeScreen(
+                                            isDarkTheme = useDarkTheme,
+                                            onNavigateTab = { currentTab = it },
+                                            onOpenSettings = { showSettings = true }
+                                        )
+                                        1 -> JejakScreen(
+                                            isDarkTheme = useDarkTheme,
+                                            onOpenSettings = { showSettings = true },
+                                            onNavigateTab = { currentTab = it }
+                                        )
+                                        2 -> DzikirScreen(
+                                            isDarkTheme = useDarkTheme,
+                                            onNavigateTab = { currentTab = it }
+                                        )
+                                        3 -> KiblatScreen(
+                                            isDarkTheme = useDarkTheme,
+                                            onNavigateTab = { currentTab = it }
+                                        )
+                                        else -> HomeScreen(
+                                            isDarkTheme = useDarkTheme,
+                                            onNavigateTab = { currentTab = it },
+                                            onOpenSettings = { showSettings = true }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

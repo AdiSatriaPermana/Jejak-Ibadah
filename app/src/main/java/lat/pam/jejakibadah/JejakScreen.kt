@@ -5,7 +5,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -13,11 +12,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.AcUnit
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,13 +31,13 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import lat.pam.jejakibadah.ui.theme.*
-import androidx.compose.foundation.isSystemInDarkTheme
 
 // Status harian pada Heatmap
 enum class DayHeatmapStatus {
@@ -44,9 +48,10 @@ enum class DayHeatmapStatus {
     BELUM
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JejakScreen(
-    isDarkTheme: Boolean = isSystemInDarkTheme(),
+    isDarkTheme: Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f,
     onOpenSettings: () -> Unit = {},
     onNavigateTab: (Int) -> Unit = {},
 ) {
@@ -76,9 +81,9 @@ fun JejakScreen(
         )
     }
 
-    // Dialog koreksi tanggal (H-1 s.d. H-3 -> tanggal 19, 20, 21) & konfirmasi Freeze
+    // BottomSheet koreksi tanggal (H-1 s.d. H-3 -> tanggal 19, 20, 21) & konfirmasi Freeze
     var editingDay by remember { mutableStateOf<Int?>(null) }
-    var showFreezeDialog by remember { mutableStateOf(false) }
+    var showFreezeSheet by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -87,12 +92,15 @@ fun JejakScreen(
             .statusBarsPadding()
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .widthIn(max = 640.dp)
+                .fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 18.dp,
                 end = 18.dp,
                 top = 12.dp,
-                bottom = BottomNavSafePadding + 24.dp
+                bottom = BottomNavSafePadding + 28.dp
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -103,7 +111,11 @@ fun JejakScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 12.dp)
+                    ) {
                         Text(
                             text = "Jejak Konsistensi",
                             fontSize = 20.sp,
@@ -126,7 +138,7 @@ fun JejakScreen(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Outlined.Settings,
+                                imageVector = Icons.Rounded.Settings,
                                 contentDescription = "Pengaturan",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(19.dp)
@@ -140,6 +152,7 @@ fun JejakScreen(
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(end = 12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(worshipFilters) { filter ->
@@ -155,6 +168,8 @@ fun JejakScreen(
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                softWrap = false,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                             )
                         }
@@ -197,12 +212,17 @@ fun JejakScreen(
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .size(24.dp)
+                                        .size(26.dp)
                                         .clip(CircleShape)
                                         .background(if (isDark) AmberBgDark else AmberBgLight),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = "🔥", fontSize = 11.sp)
+                                    Icon(
+                                        imageVector = Icons.Rounded.LocalFireDepartment,
+                                        contentDescription = "Streak Aktif",
+                                        tint = if (isDark) AmberDark else AmberLight,
+                                        modifier = Modifier.size(15.dp)
+                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(6.dp))
@@ -258,16 +278,16 @@ fun JejakScreen(
                                 )
                                 Box(
                                     modifier = Modifier
-                                        .size(24.dp)
+                                        .size(26.dp)
                                         .clip(CircleShape)
                                         .background(BrandBlue.copy(alpha = 0.12f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Star,
-                                        contentDescription = null,
-                                        tint = BrandBlue,
-                                        modifier = Modifier.size(14.dp)
+                                        imageVector = Icons.Rounded.Star,
+                                        contentDescription = "Rekor Terpanjang",
+                                        tint = if (isDark) BrandCyan else BrandBlue,
+                                        modifier = Modifier.size(15.dp)
                                     )
                                 }
                             }
@@ -321,8 +341,6 @@ fun JejakScreen(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.4.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(end = 8.dp)
@@ -343,7 +361,7 @@ fun JejakScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Tombol Jeda Hari Ini (Netral, tanpa tanya alasan)
+                            // Tombol Jeda Hari Ini (Ikon Vektor Pause)
                             Surface(
                                 onClick = {
                                     isJedaTodayActive = !isJedaTodayActive
@@ -375,10 +393,11 @@ fun JejakScreen(
                                             .background(MaterialTheme.colorScheme.surfaceVariant),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = "⏸",
-                                            fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
+                                        Icon(
+                                            imageVector = Icons.Rounded.Pause,
+                                            contentDescription = "Jeda",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(15.dp)
                                         )
                                     }
                                     Column(modifier = Modifier.weight(1f)) {
@@ -401,7 +420,7 @@ fun JejakScreen(
                                 }
                             }
 
-                            // Tombol Streak Freeze (Kuota 2/2)
+                            // Tombol Streak Freeze (Ikon Vektor AcUnit)
                             Surface(
                                 onClick = {
                                     if (isFreezeTodayActive) {
@@ -411,7 +430,7 @@ fun JejakScreen(
                                             this[22] = DayHeatmapStatus.BELUM
                                         }
                                     } else if (freezeQuota > 0) {
-                                        showFreezeDialog = true
+                                        showFreezeSheet = true
                                     }
                                 },
                                 modifier = Modifier.weight(1f),
@@ -434,10 +453,11 @@ fun JejakScreen(
                                             .background(BrandCyan.copy(alpha = 0.15f)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = "❄",
-                                            fontSize = 13.sp,
-                                            color = BrandCyan
+                                        Icon(
+                                            imageVector = Icons.Rounded.AcUnit,
+                                            contentDescription = "Streak Freeze",
+                                            tint = if (isDark) BrandCyan else BrandBlue,
+                                            modifier = Modifier.size(15.dp)
                                         )
                                     }
                                     Column(modifier = Modifier.weight(1f)) {
@@ -445,7 +465,7 @@ fun JejakScreen(
                                             text = "Freeze ($freezeQuota/2)",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = BrandCyan,
+                                            color = if (isDark) BrandCyan else BrandBlue,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -479,7 +499,7 @@ fun JejakScreen(
             }
         }
 
-        // 6. Floating Pill Navbar (Padding luar sudah ditangani di dalam AppBottomNavbar)
+        // 6. Floating Pill Navbar
         AppBottomNavbar(
             selectedIndex = 1,
             isDark = isDark,
@@ -487,92 +507,194 @@ fun JejakScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        // Dialog Konfirmasi Pakai Streak Freeze
-        if (showFreezeDialog) {
-            AlertDialog(
-                onDismissRequest = { showFreezeDialog = false },
-                title = {
-                    Text(
-                        text = "Gunakan Streak Freeze?",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
+        // BottomSheet Konfirmasi Pakai Streak Freeze
+        if (showFreezeSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showFreezeSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(11.dp))
+                                .background(BrandCyan.copy(alpha = 0.16f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.AcUnit,
+                                contentDescription = null,
+                                tint = if (isDark) BrandCyan else BrandBlue,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Gunakan Streak Freeze?",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Sisa kuota bulan ini: $freezeQuota/2",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
                     Text(
                         text = "Streak aktif kamu akan tetap terlindungi hari ini tanpa mengurangi hitungan beruntun. Sisa kuota bulan ini akan menjadi ${freezeQuota - 1}/2.",
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        freezeQuota -= 1
-                        isFreezeTodayActive = true
-                        isJedaTodayActive = false
-                        novemberStatuses = novemberStatuses.toMutableMap().apply {
-                            this[22] = DayHeatmapStatus.FREEZE
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showFreezeSheet = false },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                        ) {
+                            Text("Batal", fontWeight = FontWeight.SemiBold)
                         }
-                        showFreezeDialog = false
-                    }) {
-                        Text("Aktifkan Freeze", color = BrandBlue, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showFreezeDialog = false }) {
-                        Text("Batal")
+                        Button(
+                            onClick = {
+                                freezeQuota -= 1
+                                isFreezeTodayActive = true
+                                isJedaTodayActive = false
+                                novemberStatuses = novemberStatuses.toMutableMap().apply {
+                                    this[22] = DayHeatmapStatus.FREEZE
+                                }
+                                showFreezeSheet = false
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(46.dp)
+                        ) {
+                            Text("Aktifkan Freeze", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
-            )
+            }
         }
 
-        // Dialog Koreksi Data Mundur (H-1 s.d. H-3)
+        // BottomSheet Koreksi Data Mundur (H-1 s.d. H-3)
         editingDay?.let { day ->
-            AlertDialog(
+            ModalBottomSheet(
                 onDismissRequest = { editingDay = null },
-                title = {
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Text(
                         text = "Koreksi Tanggal $day Nov 2026",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                },
-                text = {
                     Text(
                         text = "Pilih status pencatatan ibadah untuk tanggal ini. Nilai streak akan dihitung ulang otomatis dari log.",
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        novemberStatuses = novemberStatuses.toMutableMap().apply {
-                            this[day] = DayHeatmapStatus.TEPAT_WAKTU
-                        }
-                        editingDay = null
-                    }) {
-                        Text("Tepat Waktu", color = BrandBlue, fontWeight = FontWeight.Bold)
+
+                    Button(
+                        onClick = {
+                            novemberStatuses = novemberStatuses.toMutableMap().apply {
+                                this[day] = DayHeatmapStatus.TEPAT_WAKTU
+                            }
+                            editingDay = null
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Tepat Waktu", fontWeight = FontWeight.Bold)
                     }
-                },
-                dismissButton = {
-                    Row {
-                        TextButton(onClick = {
-                            novemberStatuses = novemberStatuses.toMutableMap().apply {
-                                this[day] = DayHeatmapStatus.TERLAMBAT
-                            }
-                            editingDay = null
-                        }) {
-                            Text("Terlambat")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                novemberStatuses = novemberStatuses.toMutableMap().apply {
+                                    this[day] = DayHeatmapStatus.TERLAMBAT
+                                }
+                                editingDay = null
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Schedule,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Terlambat", fontWeight = FontWeight.SemiBold)
                         }
-                        TextButton(onClick = {
-                            novemberStatuses = novemberStatuses.toMutableMap().apply {
-                                this[day] = DayHeatmapStatus.JEDA
-                            }
-                            editingDay = null
-                        }) {
-                            Text("Jeda")
+
+                        OutlinedButton(
+                            onClick = {
+                                novemberStatuses = novemberStatuses.toMutableMap().apply {
+                                    this[day] = DayHeatmapStatus.JEDA
+                                }
+                                editingDay = null
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Pause,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Jeda", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
-            )
+            }
         }
     }
 }
@@ -594,7 +716,6 @@ private fun CalendarHeatmapCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header Bulan & Badge Persentase
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -614,13 +735,13 @@ private fun CalendarHeatmapCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                         contentDescription = "Bulan Sebelumnya",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = "Bulan Berikutnya",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
@@ -651,7 +772,6 @@ private fun CalendarHeatmapCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Nama Hari (Sen - Ahd)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -670,7 +790,6 @@ private fun CalendarHeatmapCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Grid Tanggal Heatmap
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 for (row in 0 until rowsCount) {
                     Row(
@@ -703,7 +822,6 @@ private fun CalendarHeatmapCard(
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Legend Warna Heatmap
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -720,13 +838,12 @@ private fun CalendarHeatmapCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Catatan Koreksi H-1 s.d. H-3
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Info,
+                    imageVector = Icons.Rounded.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(13.dp)
@@ -763,7 +880,7 @@ private fun HeatmapDayCell(
     val textColor = when (status) {
         DayHeatmapStatus.TEPAT_WAKTU -> Color.White
         DayHeatmapStatus.TERLAMBAT -> Color(0xFF0F172A)
-        DayHeatmapStatus.FREEZE, DayHeatmapStatus.JEDA -> BrandCyan
+        DayHeatmapStatus.FREEZE, DayHeatmapStatus.JEDA -> if (isDark) BrandCyan else BrandBlue
         DayHeatmapStatus.BELUM ->
             if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
     }
@@ -800,9 +917,19 @@ private fun HeatmapDayCell(
                 lineHeight = 10.sp
             )
             if (status == DayHeatmapStatus.FREEZE) {
-                Text(text = "❄", fontSize = 8.sp, color = BrandCyan, lineHeight = 8.sp)
+                Icon(
+                    imageVector = Icons.Rounded.AcUnit,
+                    contentDescription = "Freeze",
+                    tint = if (isDark) BrandCyan else BrandBlue,
+                    modifier = Modifier.size(9.dp)
+                )
             } else if (status == DayHeatmapStatus.JEDA) {
-                Text(text = "⏸", fontSize = 8.sp, color = BrandCyan, lineHeight = 8.sp)
+                Icon(
+                    imageVector = Icons.Rounded.Pause,
+                    contentDescription = "Jeda",
+                    tint = if (isDark) BrandCyan else BrandBlue,
+                    modifier = Modifier.size(9.dp)
+                )
             }
         }
     }
