@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
             var currentTab by rememberSaveable { mutableIntStateOf(0) }
             var showSettings by rememberSaveable { mutableStateOf(false) }
             var isOnboardingCompleted by rememberSaveable { mutableStateOf(false) }
+            var userAccountEmail by rememberSaveable { mutableStateOf<String?>(null) }
 
             val useDarkTheme = when (themeMode) {
                 0 -> false
@@ -73,7 +74,6 @@ class MainActivity : ComponentActivity() {
             }
 
             JejakIbadahTheme(darkTheme = useDarkTheme) {
-                // Key gabungan untuk mendeteksi perpindahan layar utama secara halus
                 val screenRouteKey = when {
                     !isOnboardingCompleted -> "onboarding"
                     showSettings -> "settings"
@@ -89,11 +89,9 @@ class MainActivity : ComponentActivity() {
                         targetState = screenRouteKey,
                         transitionSpec = {
                             if (targetState == "settings" || initialState == "settings") {
-                                // Pengaturan muncul/turun lembut dari bawah
                                 (fadeIn(tween(220)) + slideInVertically(tween(240)) { it / 18 })
                                     .togetherWith(fadeOut(tween(180)) + slideOutVertically(tween(200)) { it / 18 })
                             } else {
-                                // Perpindahan antar tab & onboarding pakai crossfade cepat tanpa berkedip
                                 fadeIn(tween(180)) togetherWith fadeOut(tween(140))
                             }
                         },
@@ -106,16 +104,31 @@ class MainActivity : ComponentActivity() {
                                     onToggleTheme = {
                                         themeMode = if (useDarkTheme) 0 else 1
                                     },
-                                    onLoginSuccess = { isOnboardingCompleted = true },
-                                    onContinueOffline = { isOnboardingCompleted = true },
-                                    onNavigateBack = { isOnboardingCompleted = true }
+                                    onLoginSuccess = {
+                                        userAccountEmail = "hamba.allah@domain.id"
+                                        isOnboardingCompleted = true
+                                    },
+                                    onContinueOffline = {
+                                        userAccountEmail = null
+                                        isOnboardingCompleted = true
+                                    },
+                                    onNavigateBack = {
+                                        isOnboardingCompleted = true
+                                    }
                                 )
                             }
                             "settings" -> {
                                 SettingsScreen(
                                     selectedThemeMode = themeMode,
+                                    userEmail = userAccountEmail,
                                     onThemeModeChange = { themeMode = it },
-                                    onOpenLogin = { isOnboardingCompleted = false },
+                                    onOpenLogin = {
+                                        showSettings = false
+                                        isOnboardingCompleted = false
+                                    },
+                                    onLogout = {
+                                        userAccountEmail = null
+                                    },
                                     onNavigateBack = { showSettings = false }
                                 )
                             }

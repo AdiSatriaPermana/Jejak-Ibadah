@@ -8,15 +8,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.LightMode
-import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +32,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -41,31 +50,17 @@ fun LoginScreen(
     onContinueOffline: () -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
-    // State Preferensi Awal (PRD FR-84 - 100% Offline)
-    var selectedLanguage by remember { mutableStateOf("ID") }
-    var useGps by remember { mutableStateOf(true) }
-    var selectedCity by remember { mutableStateOf("Bandung, Jawa Barat") }
-    var showCitySheet by remember { mutableStateOf(false) }
-
-    val availableCities = listOf(
-        "Bandung, Jawa Barat",
-        "Jakarta Pusat, DKI Jakarta",
-        "Surabaya, Jawa Timur",
-        "Yogyakarta, DIY",
-        "Medan, Sumatera Utara",
-        "Makassar, Sulawesi Selatan"
-    )
-
-    val sunnahOptions = listOf(
-        "Dzikir Pagi & Petang",
-        "Tilawah Al-Qur'an",
-        "Salat Duha",
-        "Salat Tahajud",
-        "Puasa Senin-Kamis & Ayyamul Bidh"
-    )
-    var selectedSunnah by remember {
-        mutableStateOf(setOf("Dzikir Pagi & Petang", "Tilawah Al-Qur'an"))
-    }
+    // 0 = Masuk, 1 = Daftar
+    var authTab by remember { mutableIntStateOf(0) }
+    var fullName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("hamba.allah@domain.id") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showForgotSheet by remember { mutableStateOf(false) }
+    var resetEmail by remember { mutableStateOf("") }
+    var resetSentMessage by remember { mutableStateOf<String?>(null) }
 
     val screenBg = MaterialTheme.colorScheme.background
     val cardBg = MaterialTheme.colorScheme.surface
@@ -89,10 +84,29 @@ fun LoginScreen(
                     modifier = Modifier
                         .widthIn(max = 640.dp)
                         .fillMaxWidth()
-                        .padding(horizontal = 22.dp, vertical = 12.dp),
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Tombol Kembali / Lewati ke Offline
+                    Surface(
+                        onClick = onNavigateBack,
+                        shape = CircleShape,
+                        color = cardBg,
+                        border = BorderStroke(1.dp, borderColor),
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = primaryText,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    // Badge Tengah: AMAN & TERENKRIPSI (Sesuai Prototipe Hal. 1)
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
@@ -105,13 +119,13 @@ fun LoginScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Lock,
+                                imageVector = Icons.Rounded.Shield,
                                 contentDescription = null,
                                 tint = accentBlue,
                                 modifier = Modifier.size(13.dp)
                             )
                             Text(
-                                text = "100% LOKAL & TANPA AKUN",
+                                text = "AMAN & TERENKRIPSI",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp,
@@ -122,6 +136,7 @@ fun LoginScreen(
                         }
                     }
 
+                    // Toggle Light / Dark Mode
                     Surface(
                         onClick = onToggleTheme,
                         shape = CircleShape,
@@ -140,65 +155,13 @@ fun LoginScreen(
                     }
                 }
             }
-        },
-        bottomBar = {
-            Surface(
-                color = screenBg,
-                shadowElevation = 8.dp
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .widthIn(max = 640.dp)
-                            .fillMaxWidth()
-                            .padding(horizontal = 22.dp, vertical = 14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Button(
-                            onClick = onContinueOffline,
-                            shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = BrandBlue,
-                                contentColor = Color.White
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp)
-                        ) {
-                            Text(
-                                text = "Mulai Beribadah",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        Text(
-                            text = "Semua data ibadah tersimpan aman di perangkat lokal.",
-                            fontSize = 11.sp,
-                            color = secondaryText,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-                    }
-                }
-            }
         }
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .navigationBarsPadding(),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
@@ -206,11 +169,11 @@ fun LoginScreen(
                     .widthIn(max = 640.dp)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 22.dp, vertical = 8.dp),
+                    .padding(horizontal = 22.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 2. Hero Brand Identity
+                // 1. Hero Brand Identity (Sesuai Prototipe Hal. 1)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
@@ -218,7 +181,7 @@ fun LoginScreen(
                     Box(contentAlignment = Alignment.BottomEnd) {
                         Box(
                             modifier = Modifier
-                                .size(62.dp)
+                                .size(64.dp)
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(
                                     Brush.linearGradient(
@@ -231,7 +194,7 @@ fun LoginScreen(
                                 imageVector = Icons.Rounded.Star,
                                 contentDescription = "Logo Jejak Ibadah",
                                 tint = Color.White,
-                                modifier = Modifier.size(30.dp)
+                                modifier = Modifier.size(32.dp)
                             )
                         }
 
@@ -253,11 +216,11 @@ fun LoginScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
                         text = "Jejak Ibadah",
-                        fontSize = 22.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = primaryText
                     )
@@ -270,7 +233,11 @@ fun LoginScreen(
                         modifier = Modifier.padding(top = 2.dp)
                     )
                     Text(
-                        text = "Atur bahasa, lokasi jadwal salat, dan amalan harianmu sebelum memulai.",
+                        text = if (authTab == 0) {
+                            "Selamat Datang Kembali. Lanjutkan pencatatan ritme spiritual harian Anda."
+                        } else {
+                            "Buat akun untuk mencadangkan streak dan riwayat ibadah Anda secara otomatis."
+                        },
                         fontSize = 12.sp,
                         color = secondaryText,
                         textAlign = TextAlign.Center,
@@ -281,59 +248,113 @@ fun LoginScreen(
                     )
                 }
 
-                // 3. Langkah 1: Bahasa Aplikasi
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = cardBg,
-                    border = BorderStroke(1.dp, borderColor),
-                    modifier = Modifier.fillMaxWidth()
+                // 2. Segmented Tab Masuk / Daftar
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(CircleShape)
+                        .background(subCardBg)
+                        .border(1.dp, borderColor, CircleShape)
+                        .padding(4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            text = "1. BAHASA APLIKASI",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp,
-                            color = accentBlue
-                        )
-
-                        Row(
+                    listOf("Masuk", "Daftar").forEachIndexed { index, label ->
+                        val active = authTab == index
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .weight(1f)
                                 .clip(CircleShape)
-                                .background(subCardBg)
-                                .padding(4.dp)
-                        ) {
-                            val languages = listOf("ID" to "Bahasa Indonesia", "EN" to "English")
-                            languages.forEach { (code, label) ->
-                                val active = selectedLanguage == code
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(CircleShape)
-                                        .background(if (active) BrandBlue else Color.Transparent)
-                                        .clickable { selectedLanguage = code }
-                                        .padding(vertical = 8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = label,
-                                        fontSize = 12.sp,
-                                        fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (active) Color.White else secondaryText,
-                                        maxLines = 1,
-                                        softWrap = false
-                                    )
+                                .background(if (active) BrandBlue else Color.Transparent)
+                                .clickable {
+                                    authTab = index
+                                    errorMessage = null
                                 }
-                            }
+                                .padding(vertical = 9.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 13.sp,
+                                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                                color = if (active) Color.White else secondaryText
+                            )
                         }
                     }
                 }
 
-                // 4. Langkah 2: Lokasi & Metode Jadwal Salat (Default Kemenag RI)
+                // 3. Tombol Masuk dengan Google (Pencadangan streak & ibadah otomatis)
+                Surface(
+                    onClick = onLoginSuccess,
+                    shape = RoundedCornerShape(16.dp),
+                    color = cardBg,
+                    border = BorderStroke(1.dp, borderColor),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(if (isDarkTheme) Color(0xFF0C2340) else Color(0xFFEFF6FF)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "G",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = accentBlue
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (authTab == 0) "Masuk dengan Google" else "Daftar dengan Google",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = primaryText
+                            )
+                            Text(
+                                text = "Pencadangan streak & ibadah otomatis",
+                                fontSize = 11.sp,
+                                color = secondaryText,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                // Divider "ATAU DENGAN EMAIL"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = borderColor
+                    )
+                    Text(
+                        text = "ATAU DENGAN EMAIL",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.6.sp,
+                        color = secondaryText,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = borderColor
+                    )
+                }
+
+                // 4. Form Email & Kata Sandi
                 Surface(
                     shape = RoundedCornerShape(18.dp),
                     color = cardBg,
@@ -341,208 +362,206 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "2. LOKASI & JADWAL SALAT",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp,
-                                color = accentBlue,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(accentBlue.copy(alpha = 0.12f))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp)
-                            ) {
+                        if (authTab == 1) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
-                                    text = "Kemenag RI",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = accentBlue,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(end = 8.dp)
-                            ) {
-                                Text(
-                                    text = "Lokasi Otomatis (GPS)",
-                                    fontSize = 13.sp,
+                                    text = "Nama Lengkap",
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = primaryText
                                 )
-                                Text(
-                                    text = "Untuk akurasi waktu salat & arah kiblat",
-                                    fontSize = 11.sp,
-                                    color = secondaryText
+                                OutlinedTextField(
+                                    value = fullName,
+                                    onValueChange = { fullName = it },
+                                    placeholder = { Text("Masukkan nama lengkap", fontSize = 13.sp) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Person,
+                                            contentDescription = null,
+                                            tint = accentBlue,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
-                            Switch(
-                                checked = useGps,
-                                onCheckedChange = { useGps = it },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = BrandBlue
-                                )
+                        }
+
+                        // Alamat Email
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Alamat Email",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = primaryText
+                            )
+                            OutlinedTextField(
+                                value = email,
+                                onValueChange = {
+                                    email = it
+                                    errorMessage = null
+                                },
+                                placeholder = { Text("hamba.allah@domain.id", fontSize = 13.sp) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Email,
+                                        contentDescription = null,
+                                        tint = accentBlue,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
 
-                        Surface(
-                            onClick = { showCitySheet = true },
-                            shape = RoundedCornerShape(12.dp),
-                            color = subCardBg,
-                            border = BorderStroke(1.dp, borderColor),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        // Kata Sandi
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Kata Sandi",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = primaryText
+                            )
+                            OutlinedTextField(
+                                value = password,
+                                onValueChange = {
+                                    password = it
+                                    errorMessage = null
+                                },
+                                placeholder = { Text("Minimal 6 karakter", fontSize = 13.sp) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Lock,
+                                        contentDescription = null,
+                                        tint = accentBlue,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                        Icon(
+                                            imageVector = if (passwordVisible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                                            contentDescription = "Tampilkan Sandi",
+                                            tint = secondaryText,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                },
+                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        // Ingat Saya & Lupa Kata Sandi
+                        if (authTab == 0) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.LocationOn,
-                                    contentDescription = null,
-                                    tint = accentBlue,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.clickable { rememberMe = !rememberMe }
+                                ) {
+                                    Checkbox(
+                                        checked = rememberMe,
+                                        onCheckedChange = { rememberMe = it },
+                                        colors = CheckboxDefaults.colors(checkedColor = BrandBlue)
+                                    )
                                     Text(
-                                        text = if (useGps) "Kota Cadangan (Offline)" else "Kota Terpilih",
-                                        fontSize = 10.sp,
+                                        text = "Ingat Saya",
+                                        fontSize = 12.sp,
                                         color = secondaryText
                                     )
-                                    Text(
-                                        text = selectedCity,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = primaryText,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
                                 }
+
                                 Text(
-                                    text = "Ubah",
+                                    text = "Lupa Kata Sandi?",
                                     fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = accentBlue
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = accentBlue,
+                                    modifier = Modifier.clickable {
+                                        resetEmail = email
+                                        resetSentMessage = null
+                                        showForgotSheet = true
+                                    }
                                 )
                             }
+                        }
+
+                        if (errorMessage != null) {
+                            Text(
+                                text = errorMessage ?: "",
+                                fontSize = 12.sp,
+                                color = if (isDarkTheme) Color(0xFFF87171) else Color(0xFFDC2626)
+                            )
+                        }
+
+                        // Tombol Utama: Masuk ke Akun / Daftar Akun
+                        Button(
+                            onClick = {
+                                if (email.isBlank() || !email.contains("@")) {
+                                    errorMessage = "Masukkan alamat email yang valid."
+                                } else if (password.length < 6) {
+                                    errorMessage = "Kata sandi minimal 6 karakter."
+                                } else {
+                                    onLoginSuccess()
+                                }
+                            },
+                            shape = CircleShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandBlue,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            Text(
+                                text = if (authTab == 0) "Masuk ke Akun" else "Daftar Akun Baru",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
 
-                // 5. Langkah 3: Pilih Target Ibadah Awal
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = cardBg,
-                    border = BorderStroke(1.dp, borderColor),
+                // 5. Opsi Akses Cepat Mode Offline (Tanpa Login)
+                TextButton(
+                    onClick = onContinueOffline,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = "3. IBADAH HARIAN YANG DILACAK",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp,
-                            color = accentBlue
-                        )
-                        Text(
-                            text = "Salat 5 Waktu otomatis aktif. Pilih amalan sunnah yang ingin dilacak:",
-                            fontSize = 11.sp,
-                            color = secondaryText
-                        )
-
-                        sunnahOptions.forEach { habit ->
-                            val isChecked = habit in selectedSunnah
-                            Surface(
-                                onClick = {
-                                    selectedSunnah = if (isChecked) {
-                                        selectedSunnah - habit
-                                    } else {
-                                        selectedSunnah + habit
-                                    }
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isChecked) accentBlue.copy(alpha = 0.1f) else subCardBg,
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (isChecked) accentBlue else borderColor
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = habit,
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isChecked) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = primaryText,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(end = 8.dp)
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .clip(CircleShape)
-                                            .background(if (isChecked) BrandBlue else Color.Transparent)
-                                            .border(
-                                                1.5.dp,
-                                                if (isChecked) BrandBlue else secondaryText.copy(alpha = 0.4f),
-                                                CircleShape
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        if (isChecked) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Check,
-                                                contentDescription = null,
-                                                tint = Color.White,
-                                                modifier = Modifier.size(13.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    Text(
+                        text = "Lanjutkan Tanpa Akun (Mode Offline Lokal)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = secondaryText
+                    )
                 }
             }
         }
 
-        // BottomSheet Pilih Kota (Ramah Jempol)
-        if (showCitySheet) {
+        // BottomSheet Lupa Kata Sandi
+        if (showForgotSheet) {
             ModalBottomSheet(
-                onDismissRequest = { showCitySheet = false },
+                onDismissRequest = { showForgotSheet = false },
                 containerColor = cardBg,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             ) {
@@ -552,54 +571,46 @@ fun LoginScreen(
                         .navigationBarsPadding()
                         .padding(horizontal = 20.dp)
                         .padding(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Pilih Kota",
+                        text = "Reset Kata Sandi",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = primaryText,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                        color = primaryText
                     )
-
-                    availableCities.forEach { city ->
-                        val isSelected = city == selectedCity
-                        Surface(
-                            onClick = {
-                                selectedCity = city
-                                showCitySheet = false
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) accentBlue.copy(alpha = 0.12f) else subCardBg,
-                            border = BorderStroke(
-                                1.dp,
-                                if (isSelected) accentBlue else borderColor
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = city,
-                                    fontSize = 14.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) accentBlue else primaryText
-                                )
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        tint = accentBlue,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
+                    Text(
+                        text = "Masukkan email terdaftar untuk menerima tautan pengaturan ulang kata sandi.",
+                        fontSize = 13.sp,
+                        color = secondaryText
+                    )
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = { resetEmail = it },
+                        label = { Text("Alamat Email") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (resetSentMessage != null) {
+                        Text(
+                            text = resetSentMessage ?: "",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isDarkTheme) EmeraldDark else EmeraldLight
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            resetSentMessage = "Tautan reset kata sandi telah dikirim ke $resetEmail."
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                    ) {
+                        Text("Kirim Tautan Reset", fontWeight = FontWeight.Bold)
                     }
                 }
             }
